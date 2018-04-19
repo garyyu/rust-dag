@@ -38,7 +38,7 @@ impl fmt::Display for Block {
 
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
 
-        let mut formated_info = format!("(name={},height={},size_of_past_set={},prev={{", self.name, self.height, self.size_of_past_set);
+        let mut formated_info = format!("name={},height={},size_of_past_set={},prev={{", self.name, self.height, self.size_of_past_set);
 
         for (_key, value) in &self.prev {
 

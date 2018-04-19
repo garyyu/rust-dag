@@ -63,7 +63,8 @@ pub fn sizeof_pastset(block: &Block, dag: &HashMap<String, Arc<RwLock<Block>>>) 
 
     rest_pred_set.remove(&bmax_name);
 
-    size_of_past = max_sizeofpast;
+    size_of_past = max_sizeofpast + block.prev.len() as u64;
+    //println!("sizeof_pastset(): block={} bmax={} size_of_past={}", block.name, bmax_name, size_of_past);
 
     let mut used_rest: HashMap<String,bool> = HashMap::new();
     let mut used_maxi: HashMap<String,bool> = HashMap::new();
@@ -72,11 +73,11 @@ pub fn sizeof_pastset(block: &Block, dag: &HashMap<String, Arc<RwLock<Block>>>) 
     let mut maxi_maxmin = MaxMin{max:0, min:<u64>::max_value()};
 
     while rest_pred_set.len() > 0 {
-        size_of_past += rest_pred_set.len() as u64;
 
         let mut new_rest_pred: HashMap<String,Arc<RwLock<Block>>> = HashMap::new();
         let _rest_local_maxmin = step_one_past(&rest_pred_set, &mut new_rest_pred, &mut used_rest, &mut rest_maxmin);
 
+        //let mut maxi_height_max = 0;
         loop {
             let mut new_maxi_pred: HashMap<String,Arc<RwLock<Block>>> = HashMap::new();
             let max_local_maxmin = step_one_past(&maxi_pred_set, &mut new_maxi_pred, &mut used_maxi, &mut maxi_maxmin);
@@ -85,11 +86,14 @@ pub fn sizeof_pastset(block: &Block, dag: &HashMap<String, Arc<RwLock<Block>>>) 
             drop(new_maxi_pred);
 
             if max_local_maxmin.max <= rest_maxmin.min {
+                //maxi_height_max = max_local_maxmin.max;
                 break;
             }
         }
 
         let sorted_keys = sorted_keys_by_height(&new_rest_pred);
+        //println!("sizeof_pastset(): block={} maxi_height_max={} rest_height_min={} sorted_keys={:?} maxi_pred_set={:?}", block.name, maxi_height_max, rest_maxmin.min,
+        //         sorted_keys, sorted_keys_by_height(&maxi_pred_set));
         for (name,_) in sorted_keys {
             let found_block = maxi_pred_set.get(&name);
             if found_block.is_some() {
@@ -97,15 +101,21 @@ pub fn sizeof_pastset(block: &Block, dag: &HashMap<String, Arc<RwLock<Block>>>) 
 
                 let rest = Arc::clone(found_block.unwrap());
                 let rest = rest.read().unwrap();
+                //println!("sizeof_pastset(): block={} common block found: {}", block.name, rest);
                 remove_successors(&rest, &mut new_rest_pred);
 
                 size_of_past -= (size_of_rest - new_rest_pred.len()) as u64;
                 new_rest_pred.remove(&name);
+                //println!("sizeof_pastset(): block={} size_of_past={}", block.name, size_of_past);
             }
         }
 
+        size_of_past += new_rest_pred.len() as u64;
+
         rest_pred_set = new_rest_pred;
+        //println!("sizeof_pastset(): block={} size_of_past={} rest_pred_set={}", block.name, size_of_past, rest_pred_set.len());
     }
+    //println!("sizeof_pastset(): block={} final result: size_of_past={}", block.name, size_of_past);
 
     return size_of_past;
 }
@@ -186,7 +196,7 @@ fn step_one_past(pred: &HashMap<String,Arc<RwLock<Block>>>, new_pred: &mut HashM
         maxmin.max = local_maxmin.max;
     }
 
-    if local_maxmin.min > maxmin.min {
+    if local_maxmin.min < maxmin.min {
         maxmin.min = local_maxmin.min;
     }
 

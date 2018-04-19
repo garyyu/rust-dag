@@ -38,7 +38,14 @@ mod tests {
         dag_add_block("D", &vec!["Genesis"], &mut dag);
         dag_add_block("E", &vec!["Genesis"], &mut dag);
 
-        dag_add_block("F", &vec!["B", "C"], &mut dag);
+        dag_add_block("F", &vec!["B","C"], &mut dag);
+        dag_add_block("H", &vec!["C","D","E"], &mut dag);
+        dag_add_block("I", &vec!["E"], &mut dag);
+
+        dag_add_block("J", &vec!["F","H"], &mut dag);
+        dag_add_block("K", &vec!["B","H","I"], &mut dag);
+        dag_add_block("L", &vec!["D","I"], &mut dag);
+        dag_add_block("M", &vec!["F","K"], &mut dag);
 
         dag_print(&dag);
 
