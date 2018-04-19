@@ -20,15 +20,14 @@ pub mod blockdag;
 mod tests {
 
     use std::collections::HashMap;
-    use std::rc::Rc;
-    use std::cell::RefCell;
+    use std::sync::{Arc,RwLock};
     use blockdag::Block;
     use blockdag::dag_add_block;
 
     #[test]
     fn test_fig3() {
 
-        let mut dag: HashMap<String, Rc<RefCell<Block>>> = HashMap::new();
+        let mut dag: HashMap<String, Arc<RwLock<Block>>> = HashMap::new();
 
         dag_add_block("Genesis", &Vec::new(), &mut dag);
 

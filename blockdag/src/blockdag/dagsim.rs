@@ -16,13 +16,12 @@
 
 use std::collections::HashMap;
 use blockdag::Block;
-use std::rc::Rc;
-use std::cell::RefCell;
+use std::sync::{Arc,RwLock};
 
-pub fn dag_add_block(name: &str, references: &Vec<&str>, dag: &mut HashMap<String, Rc<RefCell<Block>>>){
+pub fn dag_add_block(name: &str, references: &Vec<&str>, dag: &mut HashMap<String, Arc<RwLock<Block>>>){
 
     //create this block
-    let this_block = Rc::new(RefCell::new(Block{
+    let this_block = Arc::new(RwLock::new(Block{
         name: String::from(name.clone()),
         height: 0,
         size_of_past_set: 0,
@@ -39,19 +38,19 @@ pub fn dag_add_block(name: &str, references: &Vec<&str>, dag: &mut HashMap<Strin
                 panic!(except_message);
             },
             Some(block) => {
-                let refcell_reference_block = Rc::clone(block);
+                let reference_block = Arc::clone(block);
 
                 // add previous blocks to this block
                 {
-                    let reference_block = refcell_reference_block.borrow();
+                    let reference_block = reference_block.read().unwrap();
 
-                    this_block.borrow_mut()
-                        .prev.insert(reference_block.name.clone(), Rc::clone(block));
+                    let mut this_block = this_block.write().unwrap();
+                    this_block.prev.insert(reference_block.name.clone(), Arc::clone(block));
                 }
 
                 // add self as previous block's next
-                refcell_reference_block.borrow_mut()
-                    .next.insert(String::from(name.clone()), Rc::clone(&this_block));
+                let mut reference_block = reference_block.write().unwrap();
+                reference_block.next.insert(String::from(name.clone()), Arc::clone(&this_block));
             }
         }
     }

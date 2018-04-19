@@ -16,8 +16,7 @@
 // along with the rust-dag library. If not, see <http://www.gnu.org/licenses/>.
 
 use std::collections::HashMap;
-use std::rc::Rc;
-use std::cell::RefCell;
+use std::sync::{Arc,RwLock};
 
 /// Structure providing fast access to block data.
 ///
@@ -26,6 +25,6 @@ pub struct Block{
     pub name: String,
     pub height: u64,
     pub size_of_past_set: u64,
-    pub prev: HashMap<String, Rc<RefCell<Block>>>,
-    pub next: HashMap<String, Rc<RefCell<Block>>>,
+    pub prev: HashMap<String, Arc<RwLock<Block>>>,
+    pub next: HashMap<String, Arc<RwLock<Block>>>,
 }
