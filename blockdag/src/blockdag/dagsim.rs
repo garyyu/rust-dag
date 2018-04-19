@@ -46,6 +46,11 @@ pub fn dag_add_block(name: &str, references: &Vec<&str>, dag: &mut HashMap<Strin
 
                     let mut this_block = this_block.write().unwrap();
                     this_block.prev.insert(reference_block.name.clone(), Arc::clone(block));
+
+                    // height is the maximum previous height +1
+                    if reference_block.height+1 > this_block.height {
+                        this_block.height = reference_block.height+1;
+                    }
                 }
 
                 // add self as previous block's next
