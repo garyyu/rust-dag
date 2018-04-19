@@ -14,6 +14,8 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with the rust-dag library. If not, see <http://www.gnu.org/licenses/>.
 
+extern crate core;
+
 pub mod blockdag;
 
 #[cfg(test)]
@@ -22,7 +24,7 @@ mod tests {
     use std::collections::HashMap;
     use std::sync::{Arc,RwLock};
     use blockdag::Block;
-    use blockdag::dag_add_block;
+    use blockdag::{dag_add_block,dag_print};
 
     #[test]
     fn test_fig3() {
@@ -38,7 +40,8 @@ mod tests {
 
         dag_add_block("F", &vec!["B", "C"], &mut dag);
 
-        //println!("test_fig3(): {:#?}", dag);
+        //println!("test_fig3(): dag={}", dag);
+        dag_print(&dag);
 
         assert_eq!(2 + 2, 4);
     }

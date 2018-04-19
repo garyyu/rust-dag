@@ -58,3 +58,14 @@ pub fn dag_add_block(name: &str, references: &Vec<&str>, dag: &mut HashMap<Strin
 
     dag.insert(String::from(name.clone()), this_block);
 }
+
+pub fn dag_print(dag: &HashMap<String, Arc<RwLock<Block>>>){
+
+    println!("dag={{");
+    for (key, value) in dag {
+        let block = Arc::clone(value);
+        let block = block.read().unwrap();
+        println!(" {{name={},block={}}}", key, block);
+    }
+    println!("}}");
+}

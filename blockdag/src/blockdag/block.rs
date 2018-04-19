@@ -17,14 +17,38 @@
 
 use std::collections::HashMap;
 use std::sync::{Arc,RwLock};
+use std::fmt;
 
 /// Structure providing fast access to block data.
 ///
-#[derive(Debug)]
 pub struct Block{
     pub name: String,
     pub height: u64,
     pub size_of_past_set: u64,
     pub prev: HashMap<String, Arc<RwLock<Block>>>,
     pub next: HashMap<String, Arc<RwLock<Block>>>,
+}
+
+impl fmt::Display for Block {
+
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+
+        let mut formated_info = format!("(name={},height={},size_of_past_set={},prev={{", self.name, self.height, self.size_of_past_set);
+
+        for (_key, value) in &self.prev {
+
+            let block = Arc::clone(value);
+            let block = block.read().unwrap();
+
+            let tmp = format!("{},", block.name);
+            formated_info.push_str(&tmp);
+        }
+
+        if self.prev.len() > 0 {
+            formated_info.pop();
+        }
+        formated_info.push_str("}");
+
+        write!(f, "{}", formated_info)
+    }
 }

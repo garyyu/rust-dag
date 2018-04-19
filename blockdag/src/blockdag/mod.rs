@@ -22,7 +22,7 @@ mod block;
 mod dagsim;
 
 pub use self::block::Block;
-pub use self::dagsim::dag_add_block;
+pub use self::dagsim::{dag_add_block,dag_print};
 
 
 
