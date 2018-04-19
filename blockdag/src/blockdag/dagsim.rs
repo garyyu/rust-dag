@@ -15,8 +15,10 @@
 // along with the rust-dag library. If not, see <http://www.gnu.org/licenses/>.
 
 use std::collections::HashMap;
-use blockdag::Block;
 use std::sync::{Arc,RwLock};
+
+use blockdag::Block;
+use blockdag::sizeof_pastset;
 
 pub fn dag_add_block(name: &str, references: &Vec<&str>, dag: &mut HashMap<String, Arc<RwLock<Block>>>){
 
@@ -44,12 +46,12 @@ pub fn dag_add_block(name: &str, references: &Vec<&str>, dag: &mut HashMap<Strin
                 {
                     let reference_block = reference_block.read().unwrap();
 
-                    let mut this_block = this_block.write().unwrap();
-                    this_block.prev.insert(reference_block.name.clone(), Arc::clone(block));
+                    let mut this_block_w = this_block.write().unwrap();
+                    this_block_w.prev.insert(reference_block.name.clone(), Arc::clone(block));
 
                     // height is the maximum previous height +1
-                    if reference_block.height+1 > this_block.height {
-                        this_block.height = reference_block.height+1;
+                    if reference_block.height+1 > this_block_w.height {
+                        this_block_w.height = reference_block.height+1;
                     }
                 }
 
@@ -60,6 +62,12 @@ pub fn dag_add_block(name: &str, references: &Vec<&str>, dag: &mut HashMap<Strin
         }
     }
 
+    // size of pastset
+    let size_of_past_set = sizeof_pastset(&this_block.read().unwrap(), dag);
+    {
+        let mut this_block_w = this_block.write().unwrap();
+        this_block_w.size_of_past_set = size_of_past_set;
+    }
 
     dag.insert(String::from(name.clone()), this_block);
 }

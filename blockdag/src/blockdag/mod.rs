@@ -20,9 +20,11 @@
 
 mod block;
 mod dagsim;
+mod cardinality;
 
 pub use self::block::Block;
 pub use self::dagsim::{dag_add_block,dag_print};
+pub use self::cardinality::sizeof_pastset;
 
 
 
