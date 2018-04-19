@@ -1,0 +1,11 @@
+[[package]]
+name = "blockdag"
+version = "0.1.0"
+
+[[package]]
+name = "godag"
+version = "0.1.0"
+dependencies = [
+ "blockdag 0.1.0",
+]
+

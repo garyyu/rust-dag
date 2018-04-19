@@ -1,0 +1,7 @@
+[package]
+name = "godag"
+version = "0.1.0"
+authors = ["Gary YU <gary.yu@keylert.com>"]
+
+[dependencies]
+blockdag = { path = "../blockdag" }
