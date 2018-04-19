@@ -40,10 +40,18 @@ pub fn dag_add_block(name: &str, references: &Vec<&str>, dag: &mut HashMap<Strin
             },
             Some(block) => {
                 let refcell_reference_block = Rc::clone(block);
-                let reference_block = refcell_reference_block.borrow();
 
-                this_block.borrow_mut()
-                    .prev.insert(reference_block.name.clone(), Rc::clone(block));
+                // add previous blocks to this block
+                {
+                    let reference_block = refcell_reference_block.borrow();
+
+                    this_block.borrow_mut()
+                        .prev.insert(reference_block.name.clone(), Rc::clone(block));
+                }
+
+                // add self as previous block's next
+                refcell_reference_block.borrow_mut()
+                    .next.insert(String::from(name.clone()), Rc::clone(&this_block));
             }
         }
     }

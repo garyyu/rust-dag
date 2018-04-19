@@ -39,7 +39,7 @@ mod tests {
 
         dag_add_block("F", &vec!["B", "C"], &mut dag);
 
-        println!("test_fig3(): {:#?}", dag);
+        //println!("test_fig3(): {:#?}", dag);
 
         assert_eq!(2 + 2, 4);
     }
