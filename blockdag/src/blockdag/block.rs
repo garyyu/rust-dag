@@ -29,6 +29,11 @@ pub struct Block{
     pub next: HashMap<String, Arc<RwLock<Block>>>,
 }
 
+pub struct MaxMin{
+    pub max: u64,
+    pub min: u64,
+}
+
 impl fmt::Display for Block {
 
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {

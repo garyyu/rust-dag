@@ -16,20 +16,21 @@
 // along with the rust-dag library. If not, see <http://www.gnu.org/licenses/>.
 
 use std::collections::HashMap;
-use blockdag::Block;
+use std::collections::hash_map::Entry;
+use blockdag::{Block,MaxMin};
 use std::sync::{Arc,RwLock};
 
 /// Function providing cardinality of pastset blocks calculation.
 ///
 pub fn sizeof_pastset(block: &Block, dag: &HashMap<String, Arc<RwLock<Block>>>) -> u64{
 
-    if block.prev.len()==0 {
-        return 0;
-    }
-
     let mut size_of_past: u64 = 0;
 
-    let mut max_pred_set: HashMap<String,Arc<RwLock<Block>>> = HashMap::new();
+    if block.prev.len()==0 {
+        return size_of_past;
+    }
+
+    let mut maxi_pred_set: HashMap<String,Arc<RwLock<Block>>> = HashMap::new();
     let mut rest_pred_set: HashMap<String,Arc<RwLock<Block>>> = HashMap::new();
 
     // find the max sizeofpast among block's predecessors
@@ -54,18 +55,141 @@ pub fn sizeof_pastset(block: &Block, dag: &HashMap<String, Arc<RwLock<Block>>>) 
     }
 
     if bmax_name.len()==0 {
-        panic!("cardi_pastset(): impossible! bmax=nil.");
+        panic!("sizeof_pastset(): impossible! bmax=nil.");
     }
 
     let bmax_block = block.prev.get(&bmax_name).unwrap();
-    max_pred_set.insert(bmax_name.clone(), Arc::clone(bmax_block));
+    maxi_pred_set.insert(bmax_name.clone(), Arc::clone(bmax_block));
 
     rest_pred_set.remove(&bmax_name);
 
     size_of_past = max_sizeofpast;
 
+    let mut used_rest: HashMap<String,bool> = HashMap::new();
+    let mut used_maxi: HashMap<String,bool> = HashMap::new();
 
+    let mut rest_maxmin = MaxMin{max:0, min:<u64>::max_value()};
+    let mut maxi_maxmin = MaxMin{max:0, min:<u64>::max_value()};
+
+    while rest_pred_set.len() > 0 {
+        size_of_past += rest_pred_set.len() as u64;
+
+        let mut new_rest_pred: HashMap<String,Arc<RwLock<Block>>> = HashMap::new();
+        let _rest_local_maxmin = step_one_past(&rest_pred_set, &mut new_rest_pred, &mut used_rest, &mut rest_maxmin);
+
+        loop {
+            let mut new_maxi_pred: HashMap<String,Arc<RwLock<Block>>> = HashMap::new();
+            let max_local_maxmin = step_one_past(&maxi_pred_set, &mut new_maxi_pred, &mut used_maxi, &mut maxi_maxmin);
+
+            append_maps(&mut maxi_pred_set, &new_maxi_pred);
+            drop(new_maxi_pred);
+
+            if max_local_maxmin.max <= rest_maxmin.min {
+                break;
+            }
+        }
+
+        let sorted_keys = sorted_keys_by_height(&new_rest_pred);
+        for (name,_) in sorted_keys {
+            let found_block = maxi_pred_set.get(&name);
+            if found_block.is_some() {
+                let size_of_rest = new_rest_pred.len();
+
+                let rest = Arc::clone(found_block.unwrap());
+                let rest = rest.read().unwrap();
+                remove_successors(&rest, &mut new_rest_pred);
+
+                size_of_past -= (size_of_rest - new_rest_pred.len()) as u64;
+                new_rest_pred.remove(&name);
+            }
+        }
+
+        rest_pred_set = new_rest_pred;
+    }
 
     return size_of_past;
+}
+
+/// Remove from the list all the block successors which is in the list, self not included.
+///
+fn remove_successors(block: &Block, list: &mut HashMap<String, Arc<RwLock<Block>>>){
+
+    for (_key, value) in &block.next {
+
+        let next = Arc::clone(value);
+        let next = next.read().unwrap();
+
+        remove_successors(&next, list);
+
+        list.remove(&String::from(next.name.clone()));
+    }
+}
+
+fn sorted_keys_by_height(source: &HashMap<String,Arc<RwLock<Block>>>) -> Vec<(String, u64)>{
+
+    let mut keys_vec: Vec<(String, u64)> = Vec::new();
+
+    for (_key, value) in source {
+        let block = Arc::clone(value);
+        let block = block.read().unwrap();
+
+        keys_vec.push((String::from(block.name.clone()), block.height));
+    }
+
+    keys_vec.sort_by(|a, b| a.1.cmp(&b.1).reverse());
+    return keys_vec;
+}
+
+fn append_maps(target: &mut HashMap<String,Arc<RwLock<Block>>>, source: &HashMap<String,Arc<RwLock<Block>>>){
+
+    for (key, value) in source {
+
+        if let Entry::Vacant(v) = target.entry(key.clone()){
+            v.insert(Arc::clone(value));
+        }
+    }
+}
+
+fn step_one_past(pred: &HashMap<String,Arc<RwLock<Block>>>, new_pred: &mut HashMap<String,Arc<RwLock<Block>>>, used: &mut HashMap<String,bool>, maxmin: &mut MaxMin) -> MaxMin{
+
+    let mut local_maxmin = MaxMin{max:0, min:<u64>::max_value()};
+
+    for (key, value) in pred {
+        if let Entry::Vacant(v) = used.entry(key.clone()){
+
+            let rest = Arc::clone(value);
+            let rest = rest.read().unwrap();
+
+            for (key2, value2) in &rest.prev {
+
+                if let Entry::Vacant(v) = new_pred.entry(key2.clone()) {
+                    let prev = Arc::clone(value2);
+                    let prev = prev.read().unwrap();
+
+                    if prev.height > local_maxmin.max {
+                        local_maxmin.max = prev.height;
+                    }
+
+                    if prev.height < local_maxmin.min {
+                        local_maxmin.min = prev.height;
+                    }
+
+                    v.insert(Arc::clone(value2));
+                }
+            }
+
+            v.insert(true);
+        }
+    }
+
+    if local_maxmin.max > maxmin.max {
+        maxmin.max = local_maxmin.max;
+    }
+
+    if local_maxmin.min > maxmin.min {
+        maxmin.min = local_maxmin.min;
+    }
+
+    return local_maxmin;
 }
 
