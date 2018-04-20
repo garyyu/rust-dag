@@ -65,3 +65,50 @@ pub fn append_maps(target: &mut HashMap<String,Arc<RwLock<Block>>>, source: &Has
         }
     }
 }
+
+/// Remove from the list all the block predecessors and successors which is in the list, self included.
+///
+pub fn remove_past_future(block: &Block, list: &mut HashMap<String, Arc<RwLock<Block>>>){
+
+    let exist = list.remove(&String::from(block.name.clone()));
+    if exist.is_none() {
+        return;
+    }
+
+    remove_successors(block, list);
+    remove_predecessors(block, list);
+}
+
+
+/// Remove from the list all the block successors which is in the list, self not included.
+///
+fn remove_successors(block: &Block, list: &mut HashMap<String, Arc<RwLock<Block>>>){
+
+    for (_key, value) in &block.next {
+
+        let next = Arc::clone(value);
+        let next = next.read().unwrap();
+
+        let exist = list.remove(&String::from(next.name.clone()));
+        if exist.is_some() {
+            remove_successors(&next, list);
+        }
+    }
+}
+
+/// Remove from the list all the block predecessors which is in the list, self not included.
+///
+fn remove_predecessors(block: &Block, list: &mut HashMap<String, Arc<RwLock<Block>>>){
+
+    for (_key, value) in &block.prev {
+
+        let prev = Arc::clone(value);
+        let prev = prev.read().unwrap();
+
+        let exist = list.remove(&String::from(prev.name.clone()));
+        if exist.is_some() {
+            remove_predecessors(&prev, list);
+        }
+    }
+}
+

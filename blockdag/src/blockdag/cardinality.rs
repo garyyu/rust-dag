@@ -124,21 +124,6 @@ pub fn sizeof_pastset(block: &Block, dag: &HashMap<String, Arc<RwLock<Block>>>) 
     return size_of_past;
 }
 
-/// Remove from the list all the block successors which is in the list, self not included.
-///
-fn remove_successors(block: &Block, list: &mut HashMap<String, Arc<RwLock<Block>>>){
-
-    for (_key, value) in &block.next {
-
-        let next = Arc::clone(value);
-        let next = next.read().unwrap();
-
-        remove_successors(&next, list);
-
-        list.remove(&String::from(next.name.clone()));
-    }
-}
-
 pub fn sorted_keys_by_height(source: &HashMap<String,Arc<RwLock<Block>>>, reverse: bool) -> Vec<(String, u64)>{
 
     let mut keys_vec: Vec<(String, u64)> = Vec::new();

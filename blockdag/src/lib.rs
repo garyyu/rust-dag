@@ -19,11 +19,14 @@ pub mod blockdag;
 
 #[cfg(test)]
 mod tests {
+    extern crate rand;
 
     use std::collections::HashMap;
     use std::sync::{Arc,RwLock};
+    use self::rand::Rng;
+
     use blockdag::{Block,Node};
-    use blockdag::{node_add_block,dag_add_block,dag_print,tips_anticone,sorted_keys_by_height};
+    use blockdag::{node_add_block,dag_add_block,dag_print,tips_anticone,sorted_keys_by_height,remove_past_future};
 
     #[test]
     fn test_fig3() {
@@ -132,5 +135,97 @@ mod tests {
         let result = format!("anticone of {} = {:?}", "M", sorted_keys_by_height(&anticone, false));
         println!("{}",result);
         assert_eq!(result, "anticone of M = [(\"J\", 3), (\"L\", 3)]");
+    }
+
+
+    #[test]
+    fn test_add_block() {
+
+        let node = Node::init("block add test");
+
+        let mut node_w = node.write().unwrap();
+
+        node_add_block("Genesis", &Vec::new(), &mut node_w);
+
+        node_add_block("B", &vec!["Genesis"], &mut node_w);
+        node_add_block("C", &vec!["Genesis"], &mut node_w);
+        node_add_block("D", &vec!["Genesis"], &mut node_w);
+        node_add_block("E", &vec!["Genesis"], &mut node_w);
+
+        let max_back_steps = 8;
+        let max_classmate_blocks = 5;
+        let max_prev_blocks = 5;
+
+        let anticone = tips_anticone("B", &node_w.tips, &node_w.dag);
+        let result = format!("anticone of {} = {:?}", "B",
+                             sorted_keys_by_height(&anticone, false).iter().map(|&(ref n,_)|{n}).collect::<Vec<_>>());
+        println!("{}",result);
+
+        let mut blocks_generated = 0;
+
+        for height in 2..3 {
+            let classmate_blocks = rand::thread_rng().gen_range(1, max_classmate_blocks+1);
+            let back_steps = rand::thread_rng().gen_range(1, max_back_steps+1);
+            println!("height={} classmate_blocks={}", height, classmate_blocks);
+
+            for classmate in 1..classmate_blocks+1 {
+
+                let prev_blocks = rand::thread_rng().gen_range(1, max_prev_blocks+1);
+                println!("height={} classmate={} prev_blocks={}", height, classmate, prev_blocks);
+
+                let mut references = Vec::new();
+
+                // get one block from tips as 1st prev
+                let mut tip_name_selected = String::new();
+                for (key, _) in node_w.tips.iter() {
+                    references.push(key.clone());
+                    tip_name_selected.push_str(key);
+                    break;  // just take one tip only.
+                }
+
+                // randomly select one from the anticone of that tip
+                let mut anticone = tips_anticone(&tip_name_selected, &node_w.tips, &node_w.dag);
+
+                while references.len() < prev_blocks && anticone.len()>0 {
+
+                    let mut anticone_clone = anticone.clone();
+
+                    for (key, value) in anticone.iter() {
+                        if references.len() >= prev_blocks {
+                            break;
+                        }
+
+                        let block = Arc::clone(value);
+                        let block = block.read().unwrap();
+
+                        references.push(key.clone());
+
+                        // update anticone to remove all the past of this new referenced block.
+                        remove_past_future(&block, &mut anticone_clone);
+                        break;
+                    }
+
+                    anticone = anticone_clone;
+                    //println!("height={} classmate={} classmate_blocks={} prev_blocks={} references={:?} anticone size={}", height, classmate, classmate_blocks, prev_blocks, references, anticone.len());
+                }
+
+                println!("height={} classmate={} classmate_blocks={} prev_blocks={} references={:?}", height, classmate, classmate_blocks, prev_blocks, references);
+
+                blocks_generated += 1;
+
+                let mut references_str:Vec<&str> = Vec::new();
+                for reference in &references {
+                    references_str.push(reference);
+                }
+
+                node_add_block(&blocks_generated.to_string(), &references_str,&mut node_w);
+
+                println!("{}", &node_w);
+
+                dag_print(&node_w.dag);
+            }
+        }
+
+        assert_eq!(2 + 2, 4);
     }
 }
