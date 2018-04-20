@@ -22,31 +22,41 @@ mod tests {
 
     use std::collections::HashMap;
     use std::sync::{Arc,RwLock};
-    use blockdag::Block;
-    use blockdag::{dag_add_block,dag_print};
+    use blockdag::{Block,Node};
+    use blockdag::{node_add_block,dag_add_block,dag_print};
 
     #[test]
     fn test_fig3() {
 
-        let mut dag: HashMap<String, Arc<RwLock<Block>>> = HashMap::new();
+        let mut node = Arc::new(RwLock::new(Node{
+            name: String::from("fig3"),
+            height: 0,
+            size_of_dag: 0,
+            dag: HashMap::new(),
+            tips: HashMap::new(),
+        }));
 
-        dag_add_block("Genesis", &Vec::new(), &mut dag);
+        let mut node_w = node.write().unwrap();
 
-        dag_add_block("B", &vec!["Genesis"], &mut dag);
-        dag_add_block("C", &vec!["Genesis"], &mut dag);
-        dag_add_block("D", &vec!["Genesis"], &mut dag);
-        dag_add_block("E", &vec!["Genesis"], &mut dag);
+        node_add_block("Genesis", &Vec::new(), &mut node_w);
 
-        dag_add_block("F", &vec!["B","C"], &mut dag);
-        dag_add_block("H", &vec!["C","D","E"], &mut dag);
-        dag_add_block("I", &vec!["E"], &mut dag);
+        node_add_block("B", &vec!["Genesis"], &mut node_w);
+        node_add_block("C", &vec!["Genesis"], &mut node_w);
+        node_add_block("D", &vec!["Genesis"], &mut node_w);
+        node_add_block("E", &vec!["Genesis"], &mut node_w);
 
-        dag_add_block("J", &vec!["F","H"], &mut dag);
-        dag_add_block("K", &vec!["B","H","I"], &mut dag);
-        dag_add_block("L", &vec!["D","I"], &mut dag);
-        dag_add_block("M", &vec!["F","K"], &mut dag);
+        node_add_block("F", &vec!["B","C"], &mut node_w);
+        node_add_block("H", &vec!["C","D","E"], &mut node_w);
+        node_add_block("I", &vec!["E"], &mut node_w);
 
-        dag_print(&dag);
+        node_add_block("J", &vec!["F","H"], &mut node_w);
+        node_add_block("K", &vec!["B","H","I"], &mut node_w);
+        node_add_block("L", &vec!["D","I"], &mut node_w);
+        node_add_block("M", &vec!["F","K"], &mut node_w);
+
+        println!("{}", &node_w);
+
+        dag_print(&node_w.dag);
 
         assert_eq!(2 + 2, 4);
     }
@@ -54,36 +64,46 @@ mod tests {
     #[test]
     fn test_fig4() {
 
-        let mut dag: HashMap<String, Arc<RwLock<Block>>> = HashMap::new();
+        let mut node = Arc::new(RwLock::new(Node{
+            name: String::from("fig4"),
+            height: 0,
+            size_of_dag: 0,
+            dag: HashMap::new(),
+            tips: HashMap::new(),
+        }));
 
-        dag_add_block("Genesis", &Vec::new(), &mut dag);
+        let mut node_w = node.write().unwrap();
 
-        dag_add_block("B", &vec!["Genesis"], &mut dag);
-        dag_add_block("C", &vec!["Genesis"], &mut dag);
-        dag_add_block("D", &vec!["Genesis"], &mut dag);
-        dag_add_block("E", &vec!["Genesis"], &mut dag);
+        node_add_block("Genesis", &Vec::new(), &mut node_w);
 
-        dag_add_block("F", &vec!["B","C"], &mut dag);
-        dag_add_block("H", &vec!["E"], &mut dag);
-        dag_add_block("I", &vec!["C","D"], &mut dag);
+        node_add_block("B", &vec!["Genesis"], &mut node_w);
+        node_add_block("C", &vec!["Genesis"], &mut node_w);
+        node_add_block("D", &vec!["Genesis"], &mut node_w);
+        node_add_block("E", &vec!["Genesis"], &mut node_w);
 
-        dag_add_block("J", &vec!["F","D"], &mut dag);
-        dag_add_block("K", &vec!["J","I","E"], &mut dag);
-        dag_add_block("L", &vec!["F"], &mut dag);
-        dag_add_block("N", &vec!["D","H"], &mut dag);
+        node_add_block("F", &vec!["B","C"], &mut node_w);
+        node_add_block("H", &vec!["E"], &mut node_w);
+        node_add_block("I", &vec!["C","D"], &mut node_w);
 
-        dag_add_block("M", &vec!["L","K"], &mut dag);
-        dag_add_block("O", &vec!["K"], &mut dag);
-        dag_add_block("P", &vec!["K"], &mut dag);
-        dag_add_block("Q", &vec!["N"], &mut dag);
+        node_add_block("J", &vec!["F","D"], &mut node_w);
+        node_add_block("K", &vec!["J","I","E"], &mut node_w);
+        node_add_block("L", &vec!["F"], &mut node_w);
+        node_add_block("N", &vec!["D","H"], &mut node_w);
 
-        dag_add_block("R", &vec!["O","P","N"], &mut dag);
+        node_add_block("M", &vec!["L","K"], &mut node_w);
+        node_add_block("O", &vec!["K"], &mut node_w);
+        node_add_block("P", &vec!["K"], &mut node_w);
+        node_add_block("Q", &vec!["N"], &mut node_w);
 
-        dag_add_block("S", &vec!["Q"], &mut dag);
-        dag_add_block("T", &vec!["S"], &mut dag);
-        dag_add_block("U", &vec!["T"], &mut dag);
+        node_add_block("R", &vec!["O","P","N"], &mut node_w);
 
-        dag_print(&dag);
+        node_add_block("S", &vec!["Q"], &mut node_w);
+        node_add_block("T", &vec!["S"], &mut node_w);
+        node_add_block("U", &vec!["T"], &mut node_w);
+
+        println!("{}", &node_w);
+
+        dag_print(&node_w.dag);
 
         assert_eq!(2 + 2, 4);
     }

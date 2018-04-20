@@ -19,6 +19,7 @@ use std::collections::HashMap;
 use std::collections::hash_map::Entry;
 use blockdag::{Block,MaxMin};
 use std::sync::{Arc,RwLock};
+use std::cmp::Ordering;
 
 /// Function providing cardinality of pastset blocks calculation.
 ///
@@ -91,7 +92,7 @@ pub fn sizeof_pastset(block: &Block, dag: &HashMap<String, Arc<RwLock<Block>>>) 
             }
         }
 
-        let sorted_keys = sorted_keys_by_height(&new_rest_pred);
+        let sorted_keys = sorted_keys_by_height(&new_rest_pred, true);
         //println!("sizeof_pastset(): block={} maxi_height_max={} rest_height_min={} sorted_keys={:?} maxi_pred_set={:?}", block.name, maxi_height_max, rest_maxmin.min,
         //         sorted_keys, sorted_keys_by_height(&maxi_pred_set));
         for (name,_) in sorted_keys {
@@ -135,7 +136,7 @@ fn remove_successors(block: &Block, list: &mut HashMap<String, Arc<RwLock<Block>
     }
 }
 
-fn sorted_keys_by_height(source: &HashMap<String,Arc<RwLock<Block>>>) -> Vec<(String, u64)>{
+pub fn sorted_keys_by_height(source: &HashMap<String,Arc<RwLock<Block>>>, reverse: bool) -> Vec<(String, u64)>{
 
     let mut keys_vec: Vec<(String, u64)> = Vec::new();
 
@@ -146,7 +147,21 @@ fn sorted_keys_by_height(source: &HashMap<String,Arc<RwLock<Block>>>) -> Vec<(St
         keys_vec.push((String::from(block.name.clone()), block.height));
     }
 
-    keys_vec.sort_by(|a, b| a.1.cmp(&b.1).reverse());
+    if reverse==true {
+        keys_vec.sort_by(|a, b| {
+            match a.1.cmp(&b.1).reverse() {
+                Ordering::Equal => a.0.cmp(&b.0),
+                other => other,
+            }
+        });
+    }else{
+        keys_vec.sort_by(|a, b| {
+            match a.1.cmp(&b.1) {
+                Ordering::Equal => a.0.cmp(&b.0),
+                other => other,
+            }
+        });
+    }
     return keys_vec;
 }
 

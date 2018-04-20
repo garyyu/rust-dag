@@ -19,12 +19,14 @@
 //use std::sync::Arc;
 
 mod block;
+mod node;
 mod dagsim;
 mod cardinality;
 
 pub use self::block::{Block,MaxMin};
+pub use self::node::{Node,node_add_block};
 pub use self::dagsim::{dag_add_block,dag_print};
-pub use self::cardinality::sizeof_pastset;
+pub use self::cardinality::{sizeof_pastset,sorted_keys_by_height};
 
 
 

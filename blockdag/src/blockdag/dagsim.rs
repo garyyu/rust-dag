@@ -18,7 +18,7 @@ use std::collections::HashMap;
 use std::sync::{Arc,RwLock};
 
 use blockdag::Block;
-use blockdag::sizeof_pastset;
+use blockdag::{sizeof_pastset,sorted_keys_by_height};
 
 pub fn dag_add_block(name: &str, references: &Vec<&str>, dag: &mut HashMap<String, Arc<RwLock<Block>>>){
 
@@ -74,11 +74,16 @@ pub fn dag_add_block(name: &str, references: &Vec<&str>, dag: &mut HashMap<Strin
 
 pub fn dag_print(dag: &HashMap<String, Arc<RwLock<Block>>>){
 
+    let sorted_keys = sorted_keys_by_height(dag, false);
+
     println!("dag={{");
-    for (key, value) in dag {
-        let block = Arc::clone(value);
-        let block = block.read().unwrap();
-        println!(" {{name={},block={}}}", key, block);
+    for (name,_) in sorted_keys {
+        let block = dag.get(&name);
+        if block.is_some() {
+            let block = Arc::clone(block.unwrap());
+            let block = block.read().unwrap();
+            println!(" {{name={},block={}}}", name, block);
+        }
     }
     println!("}}");
 }

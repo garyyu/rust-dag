@@ -40,12 +40,9 @@ impl fmt::Display for Block {
 
         let mut formated_info = format!("name={},height={},size_of_past_set={},prev={{", self.name, self.height, self.size_of_past_set);
 
-        for (_key, value) in &self.prev {
+        for (key, _value) in &self.prev {
 
-            let block = Arc::clone(value);
-            let block = block.read().unwrap();
-
-            let tmp = format!("{},", block.name);
+            let tmp = format!("{},", key);
             formated_info.push_str(&tmp);
         }
 
