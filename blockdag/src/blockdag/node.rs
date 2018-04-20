@@ -51,7 +51,7 @@ impl fmt::Display for Node {
 
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
 
-        let mut formatted_info = format!("node={},height={},size_of_past_set={},dag={{", self.name, self.height, self.size_of_dag);
+        let mut formatted_info = format!("node={},height={},size_of_dag={},dag={{", self.name, self.height, self.size_of_dag);
 
         let sorted_keys = sorted_keys_by_height(&self.dag, false);
 
