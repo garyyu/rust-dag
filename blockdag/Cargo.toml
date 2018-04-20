@@ -5,3 +5,4 @@ authors = ["Gary YU <gary.yu@keylert.com>"]
 
 [dependencies]
 rand = "0.4.2"
+time = "0.1.39"

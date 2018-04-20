@@ -20,10 +20,12 @@ pub mod blockdag;
 #[cfg(test)]
 mod tests {
     extern crate rand;
+    extern crate time;
 
     use std::collections::HashMap;
     use std::sync::{Arc,RwLock};
     use self::rand::Rng;
+    use self::time::{PreciseTime};
 
     use blockdag::{Block,Node};
     use blockdag::{node_add_block,dag_add_block,dag_print,tips_anticone,sorted_keys_by_height,remove_past_future,update_tips};
@@ -140,6 +142,7 @@ mod tests {
 
     #[test]
     fn test_add_block() {
+        let start = PreciseTime::now();
 
         let node = Node::init("block add test");
 
@@ -152,26 +155,25 @@ mod tests {
         node_add_block("D", &vec!["Genesis"], &mut node_w, true);
         node_add_block("E", &vec!["Genesis"], &mut node_w, true);
 
-        let max_back_steps = 8;
         let max_classmate_blocks = 5;
         let max_prev_blocks = 5;
 
-        let anticone = tips_anticone("B", &node_w.tips, &node_w.dag);
-        let result = format!("anticone of {} = {:?}", "B",
-                             sorted_keys_by_height(&anticone, false).iter().map(|&(ref n,_)|{n}).collect::<Vec<_>>());
-        println!("{}",result);
+//        let anticone = tips_anticone("B", &node_w.tips, &node_w.dag);
+//        let result = format!("anticone of {} = {:?}", "B",
+//                             sorted_keys_by_height(&anticone, false).iter().map(|&(ref n,_)|{n}).collect::<Vec<_>>());
+//        println!("{}",result);
 
         let mut blocks_generated = 0;
 
-        for height in 2..1000 {
+        for height in 2..10000 {
             let classmate_blocks = rand::thread_rng().gen_range(1, max_classmate_blocks+1);
-            let back_steps = rand::thread_rng().gen_range(1, max_back_steps+1);
-            println!("height={} classmate_blocks={}", height, classmate_blocks);
+//            let back_steps = rand::thread_rng().gen_range(1, max_back_steps+1);
+            //println!("height={} classmate_blocks={}", height, classmate_blocks);
 
             for classmate in 1..classmate_blocks+1 {
 
                 let prev_blocks = rand::thread_rng().gen_range(1, max_prev_blocks+1);
-                println!("height={} classmate={} prev_blocks={}", height, classmate, prev_blocks);
+                //println!("height={} classmate={} prev_blocks={}", height, classmate, prev_blocks);
 
                 let mut references = Vec::new();
 
@@ -209,7 +211,7 @@ mod tests {
                     //println!("height={} classmate={} classmate_blocks={} prev_blocks={} references={:?} anticone size={}", height, classmate, classmate_blocks, prev_blocks, references, anticone.len());
                 }
 
-                println!("height={} classmate={} classmate_blocks={} prev_blocks={} references={:?}", height, classmate, classmate_blocks, prev_blocks, references);
+                //println!("height={} classmate={} classmate_blocks={} prev_blocks={} references={:?}", height, classmate, classmate_blocks, prev_blocks, references);
 
                 blocks_generated += 1;
 
@@ -232,6 +234,13 @@ mod tests {
                 classmate_name -= 1;
             }
         }
+
+        let end = PreciseTime::now();
+        let d = start.to(end);
+        let total_time_used = d.num_milliseconds() as f64;
+
+        println!("node=\"{}\",height={},size_of_dag={}", node_w.name, node_w.height, node_w.size_of_dag);
+        println!("total time used: {} (ms)", total_time_used);
 
         assert_eq!(2 + 2, 4);
     }

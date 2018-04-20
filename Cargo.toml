@@ -4,3 +4,6 @@ members = [
     "godag",
     "blockdag",
 ]
+
+[profile.test]
+opt-level = 3
