@@ -22,7 +22,7 @@ use std::fmt;
 use blockdag::Block;
 use blockdag::{dag_add_block,dag_print,sorted_keys_by_height};
 
-/// Structure providing fast access to block data.
+/// Structure providing fast access to node data.
 ///
 pub struct Node{
     pub name: String,
@@ -30,6 +30,21 @@ pub struct Node{
     pub size_of_dag: u64,
     pub dag: HashMap<String, Arc<RwLock<Block>>>,
     pub tips: HashMap<String, Arc<RwLock<Block>>>,
+}
+
+impl Node {
+    pub fn init(node_name: &str) -> Arc<RwLock<Node>>{
+
+        let mut node = Arc::new(RwLock::new(Node{
+            name: String::from(node_name),
+            height: 0,
+            size_of_dag: 0,
+            dag: HashMap::new(),
+            tips: HashMap::new(),
+        }));
+
+        return node;
+    }
 }
 
 impl fmt::Display for Node {
@@ -66,9 +81,62 @@ impl fmt::Display for Node {
 }
 
 
-pub fn node_add_block(name: &str, references: &Vec<&str>, node: &mut Node) {
+pub fn node_add_block(name_of_new_block: &str, references: &Vec<&str>, node: &mut Node) {
 
-    let dag = &mut node.dag;
+    // add block
+    {
+        let dag = &mut node.dag;
 
-    dag_add_block(name, references, dag);
+        dag_add_block(name_of_new_block, references, dag);
+
+        let block = dag.get(name_of_new_block);
+        if block.is_some() {
+            let block = Arc::clone(block.unwrap());
+            let block = block.read().unwrap();
+            if block.height > node.height {
+                node.height = block.height;
+            }
+            node.size_of_dag += 1;
+        }
+    }
+
+    // update tips
+    update_tips(name_of_new_block, node);
+}
+
+fn update_tips(name_of_new_block: &str, node: &mut Node){
+
+    //println!("update_tips(): new block={}", name_of_new_block);
+
+    let dag = &node.dag;
+
+    let block = dag.get(name_of_new_block);
+    if block.is_none() {
+        return;
+    }
+
+    let new_block = Arc::clone(block.unwrap());
+    let new_block = new_block.read().unwrap();
+
+    let mut to_be_removed: Vec<String> = Vec::new();
+
+    for (prev, _value) in &new_block.prev {
+        for (tip, _) in &node.tips {
+            if prev==tip {
+                to_be_removed.push(tip.to_string());
+            }
+        }
+    }
+
+    let tips = &mut node.tips;
+
+    if to_be_removed.len()>0 {
+        for item in &to_be_removed {
+            tips.remove(item);
+        }
+    }
+
+    tips.insert(new_block.name.clone(), Arc::clone(block.unwrap()));
+
+    //println!("update_tips(): new block={}, removed={:?}, new tips={}", name_of_new_block, to_be_removed, tips.len());
 }

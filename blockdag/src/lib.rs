@@ -28,13 +28,7 @@ mod tests {
     #[test]
     fn test_fig3() {
 
-        let mut node = Arc::new(RwLock::new(Node{
-            name: String::from("fig3"),
-            height: 0,
-            size_of_dag: 0,
-            dag: HashMap::new(),
-            tips: HashMap::new(),
-        }));
+        let node = Node::init("fig3");
 
         let mut node_w = node.write().unwrap();
 
@@ -64,13 +58,7 @@ mod tests {
     #[test]
     fn test_fig4() {
 
-        let mut node = Arc::new(RwLock::new(Node{
-            name: String::from("fig4"),
-            height: 0,
-            size_of_dag: 0,
-            dag: HashMap::new(),
-            tips: HashMap::new(),
-        }));
+        let node = Node::init("fig4");
 
         let mut node_w = node.write().unwrap();
 
