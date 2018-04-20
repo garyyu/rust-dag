@@ -23,7 +23,7 @@ mod tests {
     use std::collections::HashMap;
     use std::sync::{Arc,RwLock};
     use blockdag::{Block,Node};
-    use blockdag::{node_add_block,dag_add_block,dag_print};
+    use blockdag::{node_add_block,dag_add_block,dag_print,tips_anticone,sorted_keys_by_height};
 
     #[test]
     fn test_fig3() {
@@ -94,5 +94,43 @@ mod tests {
         dag_print(&node_w.dag);
 
         assert_eq!(2 + 2, 4);
+    }
+
+    #[test]
+    fn test_anticone() {
+
+        let node = Node::init("block add test");
+
+        let mut node_w = node.write().unwrap();
+
+        node_add_block("Genesis", &Vec::new(), &mut node_w);
+
+        node_add_block("B", &vec!["Genesis"], &mut node_w);
+        node_add_block("C", &vec!["Genesis"], &mut node_w);
+        node_add_block("D", &vec!["Genesis"], &mut node_w);
+        node_add_block("E", &vec!["Genesis"], &mut node_w);
+
+        node_add_block("F", &vec!["B","C"], &mut node_w);
+        node_add_block("H", &vec!["C","D","E"], &mut node_w);
+        node_add_block("I", &vec!["E"], &mut node_w);
+
+        let anticone = tips_anticone("H", &node_w.tips, &node_w.dag);
+        let result = format!("anticone of {} = {:?}", "H", sorted_keys_by_height(&anticone, false));
+        println!("{}",result);
+        assert_eq!(result, "anticone of H = [(\"B\", 1), (\"F\", 2), (\"I\", 2)]");
+
+        node_add_block("J", &vec!["F","H"], &mut node_w);
+        node_add_block("K", &vec!["B","H","I"], &mut node_w);
+        node_add_block("L", &vec!["D","I"], &mut node_w);
+        node_add_block("M", &vec!["F","K"], &mut node_w);
+//
+//        let max_back_steps = 8;
+//        let max_classmate_blocks = 5;
+//        let max_prev_blocks = 5;
+
+        let anticone = tips_anticone("M", &node_w.tips, &node_w.dag);
+        let result = format!("anticone of {} = {:?}", "M", sorted_keys_by_height(&anticone, false));
+        println!("{}",result);
+        assert_eq!(result, "anticone of M = [(\"J\", 3), (\"L\", 3)]");
     }
 }

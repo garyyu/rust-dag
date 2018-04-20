@@ -16,6 +16,7 @@
 // along with the rust-dag library. If not, see <http://www.gnu.org/licenses/>.
 
 use std::collections::HashMap;
+use std::collections::hash_map::Entry;
 use std::sync::{Arc,RwLock};
 use std::fmt;
 
@@ -52,5 +53,15 @@ impl fmt::Display for Block {
         formated_info.push_str("}");
 
         write!(f, "{}", formated_info)
+    }
+}
+
+pub fn append_maps(target: &mut HashMap<String,Arc<RwLock<Block>>>, source: &HashMap<String,Arc<RwLock<Block>>>){
+
+    for (key, value) in source {
+
+        if let Entry::Vacant(v) = target.entry(key.clone()){
+            v.insert(Arc::clone(value));
+        }
     }
 }

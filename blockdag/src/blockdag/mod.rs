@@ -22,11 +22,13 @@ mod block;
 mod node;
 mod dagsim;
 mod cardinality;
+mod anticone;
 
-pub use self::block::{Block,MaxMin};
+pub use self::block::{Block,MaxMin,append_maps};
 pub use self::node::{Node,node_add_block};
 pub use self::dagsim::{dag_add_block,dag_print};
-pub use self::cardinality::{sizeof_pastset,sorted_keys_by_height};
+pub use self::cardinality::{sizeof_pastset,sorted_keys_by_height,step_one_past};
+pub use self::anticone::{tips_anticone};
 
 
 

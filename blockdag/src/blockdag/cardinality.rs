@@ -17,9 +17,10 @@
 
 use std::collections::HashMap;
 use std::collections::hash_map::Entry;
-use blockdag::{Block,MaxMin};
 use std::sync::{Arc,RwLock};
 use std::cmp::Ordering;
+
+use blockdag::{Block,MaxMin,append_maps};
 
 /// Function providing cardinality of pastset blocks calculation.
 ///
@@ -93,8 +94,10 @@ pub fn sizeof_pastset(block: &Block, dag: &HashMap<String, Arc<RwLock<Block>>>) 
         }
 
         let sorted_keys = sorted_keys_by_height(&new_rest_pred, true);
-        //println!("sizeof_pastset(): block={} maxi_height_max={} rest_height_min={} sorted_keys={:?} maxi_pred_set={:?}", block.name, maxi_height_max, rest_maxmin.min,
-        //         sorted_keys, sorted_keys_by_height(&maxi_pred_set));
+        //println!("sizeof_pastset(): block={} rest_height_min={} rest={:?} maxi_height_max={} max={:?} size_of_past={}", block.name, rest_maxmin.min,
+        //         sorted_keys.iter().map(|&(ref n,_)|{n}).collect::<Vec<_>>(),
+        //         maxi_height_max, sorted_keys_by_height(&maxi_pred_set, false).iter().map(|&(ref n,_)|{n}).collect::<Vec<_>>(),
+        //         size_of_past);
         for (name,_) in sorted_keys {
             let found_block = maxi_pred_set.get(&name);
             if found_block.is_some() {
@@ -102,10 +105,10 @@ pub fn sizeof_pastset(block: &Block, dag: &HashMap<String, Arc<RwLock<Block>>>) 
 
                 let rest = Arc::clone(found_block.unwrap());
                 let rest = rest.read().unwrap();
-                //println!("sizeof_pastset(): block={} common block found: {}", block.name, rest);
-                remove_successors(&rest, &mut new_rest_pred);
+                //println!("sizeof_pastset(): block={} common block found:{} size_of_past={}", block.name, rest.name, size_of_past);
+//                remove_successors(&rest, &mut new_rest_pred);
+//                size_of_past += (size_of_rest - new_rest_pred.len()) as u64;
 
-                size_of_past -= (size_of_rest - new_rest_pred.len()) as u64;
                 new_rest_pred.remove(&name);
                 //println!("sizeof_pastset(): block={} size_of_past={}", block.name, size_of_past);
             }
@@ -165,17 +168,7 @@ pub fn sorted_keys_by_height(source: &HashMap<String,Arc<RwLock<Block>>>, revers
     return keys_vec;
 }
 
-fn append_maps(target: &mut HashMap<String,Arc<RwLock<Block>>>, source: &HashMap<String,Arc<RwLock<Block>>>){
-
-    for (key, value) in source {
-
-        if let Entry::Vacant(v) = target.entry(key.clone()){
-            v.insert(Arc::clone(value));
-        }
-    }
-}
-
-fn step_one_past(pred: &HashMap<String,Arc<RwLock<Block>>>, new_pred: &mut HashMap<String,Arc<RwLock<Block>>>, used: &mut HashMap<String,bool>, maxmin: &mut MaxMin) -> MaxMin{
+pub fn step_one_past(pred: &HashMap<String,Arc<RwLock<Block>>>, new_pred: &mut HashMap<String,Arc<RwLock<Block>>>, used: &mut HashMap<String,bool>, maxmin: &mut MaxMin) -> MaxMin{
 
     let mut local_maxmin = MaxMin{max:0, min:<u64>::max_value()};
 
