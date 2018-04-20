@@ -26,7 +26,7 @@ mod tests {
     use self::rand::Rng;
 
     use blockdag::{Block,Node};
-    use blockdag::{node_add_block,dag_add_block,dag_print,tips_anticone,sorted_keys_by_height,remove_past_future};
+    use blockdag::{node_add_block,dag_add_block,dag_print,tips_anticone,sorted_keys_by_height,remove_past_future,update_tips};
 
     #[test]
     fn test_fig3() {
@@ -35,21 +35,21 @@ mod tests {
 
         let mut node_w = node.write().unwrap();
 
-        node_add_block("Genesis", &Vec::new(), &mut node_w);
+        node_add_block("Genesis", &Vec::new(), &mut node_w, true);
 
-        node_add_block("B", &vec!["Genesis"], &mut node_w);
-        node_add_block("C", &vec!["Genesis"], &mut node_w);
-        node_add_block("D", &vec!["Genesis"], &mut node_w);
-        node_add_block("E", &vec!["Genesis"], &mut node_w);
+        node_add_block("B", &vec!["Genesis"], &mut node_w, true);
+        node_add_block("C", &vec!["Genesis"], &mut node_w, true);
+        node_add_block("D", &vec!["Genesis"], &mut node_w, true);
+        node_add_block("E", &vec!["Genesis"], &mut node_w, true);
 
-        node_add_block("F", &vec!["B","C"], &mut node_w);
-        node_add_block("H", &vec!["C","D","E"], &mut node_w);
-        node_add_block("I", &vec!["E"], &mut node_w);
+        node_add_block("F", &vec!["B","C"], &mut node_w, true);
+        node_add_block("H", &vec!["C","D","E"], &mut node_w, true);
+        node_add_block("I", &vec!["E"], &mut node_w, true);
 
-        node_add_block("J", &vec!["F","H"], &mut node_w);
-        node_add_block("K", &vec!["B","H","I"], &mut node_w);
-        node_add_block("L", &vec!["D","I"], &mut node_w);
-        node_add_block("M", &vec!["F","K"], &mut node_w);
+        node_add_block("J", &vec!["F","H"], &mut node_w, true);
+        node_add_block("K", &vec!["B","H","I"], &mut node_w, true);
+        node_add_block("L", &vec!["D","I"], &mut node_w, true);
+        node_add_block("M", &vec!["F","K"], &mut node_w, true);
 
         println!("{}", &node_w);
 
@@ -65,32 +65,32 @@ mod tests {
 
         let mut node_w = node.write().unwrap();
 
-        node_add_block("Genesis", &Vec::new(), &mut node_w);
+        node_add_block("Genesis", &Vec::new(), &mut node_w, true);
 
-        node_add_block("B", &vec!["Genesis"], &mut node_w);
-        node_add_block("C", &vec!["Genesis"], &mut node_w);
-        node_add_block("D", &vec!["Genesis"], &mut node_w);
-        node_add_block("E", &vec!["Genesis"], &mut node_w);
+        node_add_block("B", &vec!["Genesis"], &mut node_w, true);
+        node_add_block("C", &vec!["Genesis"], &mut node_w, true);
+        node_add_block("D", &vec!["Genesis"], &mut node_w, true);
+        node_add_block("E", &vec!["Genesis"], &mut node_w, true);
 
-        node_add_block("F", &vec!["B","C"], &mut node_w);
-        node_add_block("H", &vec!["E"], &mut node_w);
-        node_add_block("I", &vec!["C","D"], &mut node_w);
+        node_add_block("F", &vec!["B","C"], &mut node_w, true);
+        node_add_block("H", &vec!["E"], &mut node_w, true);
+        node_add_block("I", &vec!["C","D"], &mut node_w, true);
 
-        node_add_block("J", &vec!["F","D"], &mut node_w);
-        node_add_block("K", &vec!["J","I","E"], &mut node_w);
-        node_add_block("L", &vec!["F"], &mut node_w);
-        node_add_block("N", &vec!["D","H"], &mut node_w);
+        node_add_block("J", &vec!["F","D"], &mut node_w, true);
+        node_add_block("K", &vec!["J","I","E"], &mut node_w, true);
+        node_add_block("L", &vec!["F"], &mut node_w, true);
+        node_add_block("N", &vec!["D","H"], &mut node_w, true);
 
-        node_add_block("M", &vec!["L","K"], &mut node_w);
-        node_add_block("O", &vec!["K"], &mut node_w);
-        node_add_block("P", &vec!["K"], &mut node_w);
-        node_add_block("Q", &vec!["N"], &mut node_w);
+        node_add_block("M", &vec!["L","K"], &mut node_w, true);
+        node_add_block("O", &vec!["K"], &mut node_w, true);
+        node_add_block("P", &vec!["K"], &mut node_w, true);
+        node_add_block("Q", &vec!["N"], &mut node_w, true);
 
-        node_add_block("R", &vec!["O","P","N"], &mut node_w);
+        node_add_block("R", &vec!["O","P","N"], &mut node_w, true);
 
-        node_add_block("S", &vec!["Q"], &mut node_w);
-        node_add_block("T", &vec!["S"], &mut node_w);
-        node_add_block("U", &vec!["T"], &mut node_w);
+        node_add_block("S", &vec!["Q"], &mut node_w, true);
+        node_add_block("T", &vec!["S"], &mut node_w, true);
+        node_add_block("U", &vec!["T"], &mut node_w, true);
 
         println!("{}", &node_w);
 
@@ -106,26 +106,26 @@ mod tests {
 
         let mut node_w = node.write().unwrap();
 
-        node_add_block("Genesis", &Vec::new(), &mut node_w);
+        node_add_block("Genesis", &Vec::new(), &mut node_w, true);
 
-        node_add_block("B", &vec!["Genesis"], &mut node_w);
-        node_add_block("C", &vec!["Genesis"], &mut node_w);
-        node_add_block("D", &vec!["Genesis"], &mut node_w);
-        node_add_block("E", &vec!["Genesis"], &mut node_w);
+        node_add_block("B", &vec!["Genesis"], &mut node_w, true);
+        node_add_block("C", &vec!["Genesis"], &mut node_w, true);
+        node_add_block("D", &vec!["Genesis"], &mut node_w, true);
+        node_add_block("E", &vec!["Genesis"], &mut node_w, true);
 
-        node_add_block("F", &vec!["B","C"], &mut node_w);
-        node_add_block("H", &vec!["C","D","E"], &mut node_w);
-        node_add_block("I", &vec!["E"], &mut node_w);
+        node_add_block("F", &vec!["B","C"], &mut node_w, true);
+        node_add_block("H", &vec!["C","D","E"], &mut node_w, true);
+        node_add_block("I", &vec!["E"], &mut node_w, true);
 
         let anticone = tips_anticone("H", &node_w.tips, &node_w.dag);
         let result = format!("anticone of {} = {:?}", "H", sorted_keys_by_height(&anticone, false));
         println!("{}",result);
         assert_eq!(result, "anticone of H = [(\"B\", 1), (\"F\", 2), (\"I\", 2)]");
 
-        node_add_block("J", &vec!["F","H"], &mut node_w);
-        node_add_block("K", &vec!["B","H","I"], &mut node_w);
-        node_add_block("L", &vec!["D","I"], &mut node_w);
-        node_add_block("M", &vec!["F","K"], &mut node_w);
+        node_add_block("J", &vec!["F","H"], &mut node_w, true);
+        node_add_block("K", &vec!["B","H","I"], &mut node_w, true);
+        node_add_block("L", &vec!["D","I"], &mut node_w, true);
+        node_add_block("M", &vec!["F","K"], &mut node_w, true);
 //
 //        let max_back_steps = 8;
 //        let max_classmate_blocks = 5;
@@ -145,12 +145,12 @@ mod tests {
 
         let mut node_w = node.write().unwrap();
 
-        node_add_block("Genesis", &Vec::new(), &mut node_w);
+        node_add_block("Genesis", &Vec::new(), &mut node_w, true);
 
-        node_add_block("B", &vec!["Genesis"], &mut node_w);
-        node_add_block("C", &vec!["Genesis"], &mut node_w);
-        node_add_block("D", &vec!["Genesis"], &mut node_w);
-        node_add_block("E", &vec!["Genesis"], &mut node_w);
+        node_add_block("B", &vec!["Genesis"], &mut node_w, true);
+        node_add_block("C", &vec!["Genesis"], &mut node_w, true);
+        node_add_block("D", &vec!["Genesis"], &mut node_w, true);
+        node_add_block("E", &vec!["Genesis"], &mut node_w, true);
 
         let max_back_steps = 8;
         let max_classmate_blocks = 5;
@@ -163,7 +163,7 @@ mod tests {
 
         let mut blocks_generated = 0;
 
-        for height in 2..3 {
+        for height in 2..1000 {
             let classmate_blocks = rand::thread_rng().gen_range(1, max_classmate_blocks+1);
             let back_steps = rand::thread_rng().gen_range(1, max_back_steps+1);
             println!("height={} classmate_blocks={}", height, classmate_blocks);
@@ -218,11 +218,18 @@ mod tests {
                     references_str.push(reference);
                 }
 
-                node_add_block(&blocks_generated.to_string(), &references_str,&mut node_w);
+                node_add_block(&blocks_generated.to_string(), &references_str,&mut node_w, false);
 
-                println!("{}", &node_w);
+                //println!("{}", &node_w);
 
-                dag_print(&node_w.dag);
+                //dag_print(&node_w.dag);
+            }
+
+            // update tips once when a batch of blocks generated.
+            let mut classmate_name = blocks_generated;
+            for classmate in 1..classmate_blocks+1 {
+                update_tips(&classmate_name.to_string(), &mut node_w);
+                classmate_name -= 1;
             }
         }
 

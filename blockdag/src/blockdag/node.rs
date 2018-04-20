@@ -81,7 +81,7 @@ impl fmt::Display for Node {
 }
 
 
-pub fn node_add_block(name_of_new_block: &str, references: &Vec<&str>, node: &mut Node) {
+pub fn node_add_block(name_of_new_block: &str, references: &Vec<&str>, node: &mut Node, do_update_tips: bool) {
 
     // add block
     {
@@ -101,10 +101,12 @@ pub fn node_add_block(name_of_new_block: &str, references: &Vec<&str>, node: &mu
     }
 
     // update tips
-    update_tips(name_of_new_block, node);
+    if do_update_tips {
+        update_tips(name_of_new_block, node);
+    }
 }
 
-fn update_tips(name_of_new_block: &str, node: &mut Node){
+pub fn update_tips(name_of_new_block: &str, node: &mut Node){
 
     //println!("update_tips(): new block={}", name_of_new_block);
 
