@@ -18,7 +18,6 @@
 use std::collections::HashMap;
 use std::collections::hash_map::Entry;
 use std::sync::{Arc,RwLock};
-use std::cmp::Ordering;
 
 use blockdag::{Block,MaxMin,append_maps};
 
@@ -93,64 +92,26 @@ pub fn sizeof_pastset(block: &Block, dag: &HashMap<String, Arc<RwLock<Block>>>) 
             }
         }
 
-        let sorted_keys = sorted_keys_by_height(&new_rest_pred, true);
         //println!("sizeof_pastset(): block={} rest_height_min={} rest={:?} maxi_height_max={} max={:?} size_of_past={}", block.name, rest_maxmin.min,
-        //         sorted_keys.iter().map(|&(ref n,_)|{n}).collect::<Vec<_>>(),
+        //         sorted_keys_by_height(&new_rest_pred, false).iter().map(|&(ref n,_)|{n}).collect::<Vec<_>>(),
         //         maxi_height_max, sorted_keys_by_height(&maxi_pred_set, false).iter().map(|&(ref n,_)|{n}).collect::<Vec<_>>(),
         //         size_of_past);
-        for (name,_) in sorted_keys {
-            let found_block = maxi_pred_set.get(&name);
-            if found_block.is_some() {
-                let size_of_rest = new_rest_pred.len();
-
-                let rest = Arc::clone(found_block.unwrap());
-                let rest = rest.read().unwrap();
-                //println!("sizeof_pastset(): block={} common block found:{} size_of_past={}", block.name, rest.name, size_of_past);
-//                remove_successors(&rest, &mut new_rest_pred);
-//                size_of_past += (size_of_rest - new_rest_pred.len()) as u64;
-
-                new_rest_pred.remove(&name);
-                //println!("sizeof_pastset(): block={} size_of_past={}", block.name, size_of_past);
+        let rest_keys = new_rest_pred.iter().map(|(k,v)|{k.clone()}).collect::<Vec<String>>();
+        for name in &rest_keys {
+            if maxi_pred_set.get(name).is_some() {
+                new_rest_pred.remove(name);
             }
         }
 
         size_of_past += new_rest_pred.len() as u64;
 
+        drop(rest_pred_set);
         rest_pred_set = new_rest_pred;
         //println!("sizeof_pastset(): block={} size_of_past={} rest_pred_set={}", block.name, size_of_past, rest_pred_set.len());
     }
     //println!("sizeof_pastset(): block={} final result: size_of_past={}", block.name, size_of_past);
 
     return size_of_past;
-}
-
-pub fn sorted_keys_by_height(source: &HashMap<String,Arc<RwLock<Block>>>, reverse: bool) -> Vec<(String, u64)>{
-
-    let mut keys_vec: Vec<(String, u64)> = Vec::new();
-
-    for (_key, value) in source {
-        let block = Arc::clone(value);
-        let block = block.read().unwrap();
-
-        keys_vec.push((String::from(block.name.clone()), block.height));
-    }
-
-    if reverse==true {
-        keys_vec.sort_by(|a, b| {
-            match a.1.cmp(&b.1).reverse() {
-                Ordering::Equal => a.0.cmp(&b.0),
-                other => other,
-            }
-        });
-    }else{
-        keys_vec.sort_by(|a, b| {
-            match a.1.cmp(&b.1) {
-                Ordering::Equal => a.0.cmp(&b.0),
-                other => other,
-            }
-        });
-    }
-    return keys_vec;
 }
 
 pub fn step_one_past(pred: &HashMap<String,Arc<RwLock<Block>>>, new_pred: &mut HashMap<String,Arc<RwLock<Block>>>, used: &mut HashMap<String,bool>, maxmin: &mut MaxMin) -> MaxMin{

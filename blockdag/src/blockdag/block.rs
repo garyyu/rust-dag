@@ -19,6 +19,7 @@ use std::collections::HashMap;
 use std::collections::hash_map::Entry;
 use std::sync::{Arc,RwLock};
 use std::fmt;
+use std::cmp::Ordering;
 
 /// Structure providing fast access to block data.
 ///
@@ -112,3 +113,32 @@ fn remove_predecessors(block: &Block, list: &mut HashMap<String, Arc<RwLock<Bloc
     }
 }
 
+
+pub fn sorted_keys_by_height(source: &HashMap<String,Arc<RwLock<Block>>>, reverse: bool) -> Vec<(String, u64)>{
+
+    let mut keys_vec: Vec<(String, u64)> = Vec::new();
+
+    for (_key, value) in source {
+        let block = Arc::clone(value);
+        let block = block.read().unwrap();
+
+        keys_vec.push((String::from(block.name.clone()), block.height));
+    }
+
+    if reverse==true {
+        keys_vec.sort_by(|a, b| {
+            match a.1.cmp(&b.1).reverse() {
+                Ordering::Equal => a.0.cmp(&b.0),
+                other => other,
+            }
+        });
+    }else{
+        keys_vec.sort_by(|a, b| {
+            match a.1.cmp(&b.1) {
+                Ordering::Equal => a.0.cmp(&b.0),
+                other => other,
+            }
+        });
+    }
+    return keys_vec;
+}

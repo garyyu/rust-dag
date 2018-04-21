@@ -24,10 +24,10 @@ mod dagsim;
 mod cardinality;
 mod anticone;
 
-pub use self::block::{Block,MaxMin,append_maps,remove_past_future};
+pub use self::block::{Block,MaxMin,append_maps,remove_past_future,sorted_keys_by_height};
 pub use self::node::{Node,node_add_block,update_tips};
 pub use self::dagsim::{dag_add_block,dag_print};
-pub use self::cardinality::{sizeof_pastset,sorted_keys_by_height,step_one_past};
+pub use self::cardinality::{sizeof_pastset,step_one_past};
 pub use self::anticone::{tips_anticone};
 
 
