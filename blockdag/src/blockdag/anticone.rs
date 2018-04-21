@@ -16,16 +16,14 @@
 // along with the rust-dag library. If not, see <http://www.gnu.org/licenses/>.
 
 use std::collections::HashMap;
-use std::collections::hash_map::Entry;
 use std::sync::{Arc,RwLock};
-use std::cmp::Ordering;
 
 use blockdag::{Block,MaxMin,append_maps};
 use blockdag::{sorted_keys_by_height,step_one_past};
 
 /// Function providing anti-cone calculations.
 ///
-pub fn tips_anticone(tip_name: &str, tips: &HashMap<String, Arc<RwLock<Block>>>, dag: &HashMap<String, Arc<RwLock<Block>>>) -> HashMap<String, Arc<RwLock<Block>>>{
+pub fn tips_anticone(tip_name: &str, tips: &HashMap<String, Arc<RwLock<Block>>>) -> HashMap<String, Arc<RwLock<Block>>>{
 
     let mut anticone: HashMap<String,Arc<RwLock<Block>>> = HashMap::new();
 
@@ -37,13 +35,10 @@ pub fn tips_anticone(tip_name: &str, tips: &HashMap<String, Arc<RwLock<Block>>>,
     let mut maxi_pred_set: HashMap<String,Arc<RwLock<Block>>> = HashMap::new();
     let mut rest_pred_set: HashMap<String,Arc<RwLock<Block>>> = HashMap::new();
 
-    // find the max sizeofpast among block's predecessors
-    let mut max_sizeofpast: u64 = 0;
-
     for (key, value) in tips {
 
-        let tip = Arc::clone(value);
-        let tip = tip.read().unwrap();
+//        let tip = Arc::clone(value);
+//        let tip = tip.read().unwrap();
 
         if key == tip_name {
             maxi_pred_set.insert(String::from(key.clone()), Arc::clone(value));
@@ -85,28 +80,17 @@ pub fn tips_anticone(tip_name: &str, tips: &HashMap<String, Arc<RwLock<Block>>>,
             }
         }
 
-        let sorted_keys = sorted_keys_by_height(&new_rest_pred, true);
         //println!("tips_anticone(): tip={} rest_height_min={} rest={:?} maxi_height_max={} max={:?} size_of_anticone={}", tip_name, rest_maxmin.min,
-        //         sorted_keys.iter().map(|&(ref n,_)|{n}).collect::<Vec<_>>(),
+        //         sorted_keys_by_height(&new_rest_pred, true).iter().map(|&(ref n,_)|{n}).collect::<Vec<_>>(),
         //         maxi_height_max, sorted_keys_by_height(&maxi_pred_set, true).iter().map(|&(ref n,_)|{n}).collect::<Vec<_>>(),
         //         anticone.len());
-        for (name,_) in sorted_keys {
-            let found_block = maxi_pred_set.get(&name);
-            if found_block.is_some() {
-                let size_of_rest = new_rest_pred.len();
-
-                let rest = Arc::clone(found_block.unwrap());
-                let rest = rest.read().unwrap();
-                //println!("tips_anticone(): tip={} common block found:{} size_of_anticone={}", tip_name, rest.name, anticone.len());
-                move_successors(&rest, &mut new_rest_pred, &mut anticone);
-
-                //size_of_past += (size_of_rest - new_rest_pred.len()) as u64;
-                new_rest_pred.remove(&name);
-                //println!("tips_anticone(): tip={} size_of_anticone={}", tip_name, anticone.len());
+        let rest_keys = new_rest_pred.iter().map(|(k,_)|{k.clone()}).collect::<Vec<String>>();
+        for name in &rest_keys {
+            if maxi_pred_set.get(name).is_some() {
+                new_rest_pred.remove(name);
             }
         }
 
-        //size_of_past += new_rest_pred.len() as u64;
         append_maps(&mut anticone, &new_rest_pred);
 
         rest_pred_set = new_rest_pred;
@@ -118,22 +102,4 @@ pub fn tips_anticone(tip_name: &str, tips: &HashMap<String, Arc<RwLock<Block>>>,
 }
 
 
-/// Move from the list all the block successors which is in the list, self not included, to the target list.
-///
-fn move_successors(block: &Block, list: &mut HashMap<String, Arc<RwLock<Block>>>, target: &mut HashMap<String,Arc<RwLock<Block>>>){
-
-    for (_key, value) in &block.next {
-
-        let next = Arc::clone(value);
-        let next = next.read().unwrap();
-
-        move_successors(&next, list, target);
-
-        let exist = list.remove(&next.name.clone());
-        if exist.is_some() {
-            target.entry(String::from(next.name.clone()))
-                .or_insert(Arc::clone(value));
-        }
-    }
-}
 

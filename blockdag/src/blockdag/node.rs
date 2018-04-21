@@ -20,7 +20,7 @@ use std::sync::{Arc,RwLock};
 use std::fmt;
 
 use blockdag::Block;
-use blockdag::{dag_add_block,dag_print,sorted_keys_by_height};
+use blockdag::{dag_add_block,sorted_keys_by_height};
 
 /// Structure providing fast access to node data.
 ///
@@ -35,7 +35,7 @@ pub struct Node{
 impl Node {
     pub fn init(node_name: &str) -> Arc<RwLock<Node>>{
 
-        let mut node = Arc::new(RwLock::new(Node{
+        let node = Arc::new(RwLock::new(Node{
             name: String::from(node_name),
             height: 0,
             size_of_dag: 0,

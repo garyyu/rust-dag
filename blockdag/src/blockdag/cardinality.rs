@@ -23,7 +23,7 @@ use blockdag::{Block,MaxMin,append_maps};
 
 /// Function providing cardinality of pastset blocks calculation.
 ///
-pub fn sizeof_pastset(block: &Block, dag: &HashMap<String, Arc<RwLock<Block>>>) -> u64{
+pub fn sizeof_pastset(block: &Block) -> u64{
 
     let mut size_of_past: u64 = 0;
 
@@ -96,7 +96,7 @@ pub fn sizeof_pastset(block: &Block, dag: &HashMap<String, Arc<RwLock<Block>>>) 
         //         sorted_keys_by_height(&new_rest_pred, false).iter().map(|&(ref n,_)|{n}).collect::<Vec<_>>(),
         //         maxi_height_max, sorted_keys_by_height(&maxi_pred_set, false).iter().map(|&(ref n,_)|{n}).collect::<Vec<_>>(),
         //         size_of_past);
-        let rest_keys = new_rest_pred.iter().map(|(k,v)|{k.clone()}).collect::<Vec<String>>();
+        let rest_keys = new_rest_pred.iter().map(|(k,_)|{k.clone()}).collect::<Vec<String>>();
         for name in &rest_keys {
             if maxi_pred_set.get(name).is_some() {
                 new_rest_pred.remove(name);

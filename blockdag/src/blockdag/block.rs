@@ -142,3 +142,23 @@ pub fn sorted_keys_by_height(source: &HashMap<String,Arc<RwLock<Block>>>, revers
     }
     return keys_vec;
 }
+
+
+// Move from the list all the block successors which is in the list, self not included, to the target list.
+//
+//fn move_successors(block: &Block, list: &mut HashMap<String, Arc<RwLock<Block>>>, target: &mut HashMap<String,Arc<RwLock<Block>>>){
+//
+//    for (_key, value) in &block.next {
+//
+//        let next = Arc::clone(value);
+//        let next = next.read().unwrap();
+//
+//        move_successors(&next, list, target);
+//
+//        let exist = list.remove(&next.name.clone());
+//        if exist.is_some() {
+//            target.entry(String::from(next.name.clone()))
+//                .or_insert(Arc::clone(value));
+//        }
+//    }
+//}

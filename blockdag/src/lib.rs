@@ -22,13 +22,12 @@ mod tests {
     extern crate rand;
     extern crate time;
 
-    use std::collections::HashMap;
-    use std::sync::{Arc,RwLock};
+    use std::sync::{Arc};
     use self::rand::Rng;
     use self::time::{PreciseTime};
 
-    use blockdag::{Block,Node};
-    use blockdag::{node_add_block,dag_add_block,dag_print,tips_anticone,sorted_keys_by_height,remove_past_future,update_tips};
+    use blockdag::{Node};
+    use blockdag::{node_add_block,dag_print,tips_anticone,sorted_keys_by_height,remove_past_future,update_tips};
 
     #[test]
     fn test_fig3() {
@@ -119,7 +118,7 @@ mod tests {
         node_add_block("H", &vec!["C","D","E"], &mut node_w, true);
         node_add_block("I", &vec!["E"], &mut node_w, true);
 
-        let anticone = tips_anticone("H", &node_w.tips, &node_w.dag);
+        let anticone = tips_anticone("H", &node_w.tips);
         let result = format!("anticone of {} = {:?}", "H", sorted_keys_by_height(&anticone, false));
         println!("{}",result);
         assert_eq!(result, "anticone of H = [(\"B\", 1), (\"F\", 2), (\"I\", 2)]");
@@ -133,7 +132,7 @@ mod tests {
 //        let max_classmate_blocks = 5;
 //        let max_prev_blocks = 5;
 
-        let anticone = tips_anticone("M", &node_w.tips, &node_w.dag);
+        let anticone = tips_anticone("M", &node_w.tips);
         let result = format!("anticone of {} = {:?}", "M", sorted_keys_by_height(&anticone, false));
         println!("{}",result);
         assert_eq!(result, "anticone of M = [(\"J\", 3), (\"L\", 3)]");
@@ -165,12 +164,12 @@ mod tests {
 
         let mut blocks_generated = 0;
 
-        for height in 2..10000 {
+        for _height in 2..10000 {
             let classmate_blocks = rand::thread_rng().gen_range(1, max_classmate_blocks+1);
 //            let back_steps = rand::thread_rng().gen_range(1, max_back_steps+1);
             //println!("height={} classmate_blocks={}", height, classmate_blocks);
 
-            for classmate in 1..classmate_blocks+1 {
+            for _classmate in 1..classmate_blocks+1 {
 
                 let prev_blocks = rand::thread_rng().gen_range(1, max_prev_blocks+1);
                 //println!("height={} classmate={} prev_blocks={}", height, classmate, prev_blocks);
@@ -186,7 +185,7 @@ mod tests {
                 }
 
                 // randomly select one from the anticone of that tip
-                let mut anticone = tips_anticone(&tip_name_selected, &node_w.tips, &node_w.dag);
+                let mut anticone = tips_anticone(&tip_name_selected, &node_w.tips);
 
                 while references.len() < prev_blocks && anticone.len()>0 {
 
@@ -229,7 +228,7 @@ mod tests {
 
             // update tips once when a batch of blocks generated.
             let mut classmate_name = blocks_generated;
-            for classmate in 1..classmate_blocks+1 {
+            for _classmate in 1..classmate_blocks+1 {
                 update_tips(&classmate_name.to_string(), &mut node_w);
                 classmate_name -= 1;
             }

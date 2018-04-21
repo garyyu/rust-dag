@@ -63,7 +63,7 @@ pub fn dag_add_block(name: &str, references: &Vec<&str>, dag: &mut HashMap<Strin
     }
 
     // size of pastset
-    let size_of_past_set = sizeof_pastset(&this_block.read().unwrap(), dag);
+    let size_of_past_set = sizeof_pastset(&this_block.read().unwrap());
     {
         let mut this_block_w = this_block.write().unwrap();
         this_block_w.size_of_past_set = size_of_past_set;
