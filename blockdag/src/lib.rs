@@ -27,7 +27,7 @@ mod tests {
     use self::time::{PreciseTime};
 
     use blockdag::{Node};
-    use blockdag::{node_add_block,dag_print,tips_anticone,sorted_keys_by_height,remove_past_future,update_tips};
+    use blockdag::{node_add_block,dag_print,tips_anticone,sorted_keys_by_height,remove_past_future,update_tips,calc_blue};
 
     #[test]
     fn test_fig3() {
@@ -37,8 +37,10 @@ mod tests {
         let mut node_w = node.write().unwrap();
 
         node_add_block("Genesis", &Vec::new(), &mut node_w, true);
+        calc_blue("Genesis", &mut node_w, 3);
 
         node_add_block("B", &vec!["Genesis"], &mut node_w, true);
+        calc_blue("B", &mut node_w, 3);
         node_add_block("C", &vec!["Genesis"], &mut node_w, true);
         node_add_block("D", &vec!["Genesis"], &mut node_w, true);
         node_add_block("E", &vec!["Genesis"], &mut node_w, true);

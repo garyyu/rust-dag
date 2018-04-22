@@ -16,6 +16,7 @@
 // along with the rust-dag library. If not, see <http://www.gnu.org/licenses/>.
 
 use std::collections::HashMap;
+use std::collections::hash_map::Entry;
 use std::sync::{Arc,RwLock};
 
 use blockdag::{Block,MaxMin,append_maps};
@@ -49,7 +50,7 @@ pub fn tips_anticone(tip_name: &str, tips: &HashMap<String, Arc<RwLock<Block>>>)
     }
 
     if maxi_pred_set.len()==0 {
-        //println!("tips_anticone(): error! tip {} is not in tips", tip_name);
+        println!("tips_anticone(): error! tip {} is not in tips", tip_name);
         return HashMap::new();
     }
 
@@ -99,6 +100,98 @@ pub fn tips_anticone(tip_name: &str, tips: &HashMap<String, Arc<RwLock<Block>>>)
     //println!("tips_anticone(): tip={} final result: size_of_anticone={}", tip_name, anticone.len());
 
     return anticone;
+}
+
+/// Function providing anti-cone blue counting, optimized for k: exit once counter > k already.
+///
+pub fn tips_anticone_blue(tip_name: &str, tips: &HashMap<String, Arc<RwLock<Block>>>, k: i32) -> (i32,HashMap<String, Arc<RwLock<Block>>>){
+
+    let mut anticone_blue_count: i32 = 0;
+    let mut anticone: HashMap<String,Arc<RwLock<Block>>> = HashMap::new();
+
+    if tips.len()==0 {
+        println!("tips_anticone_blue(): tip={} error! tips is empty", tip_name);
+        return (-1,anticone);
+    }
+
+    let mut maxi_pred_set: HashMap<String,Arc<RwLock<Block>>> = HashMap::new();
+    let mut rest_pred_set: HashMap<String,Arc<RwLock<Block>>> = HashMap::new();
+
+    for (key, value) in tips {
+
+        if key == tip_name {
+            maxi_pred_set.insert(String::from(key.clone()), Arc::clone(value));
+        }else {
+            rest_pred_set.insert(String::from(key.clone()), Arc::clone(value));
+
+            let tip = &value.read().unwrap();
+            if tip.is_blue {
+                anticone.insert(String::from(key.clone()), Arc::clone(value));
+                anticone_blue_count += 1;
+            }
+        }
+    }
+
+    if maxi_pred_set.len()==0 {
+        println!("tips_anticone_blue(): error! tip {} is not in tips", tip_name);
+        return (-1,HashMap::new());
+    }
+
+    //println!("tips_anticone(): tip={} size_of_anticone={}", tip_name, anticone.len());
+
+    let mut used_rest: HashMap<String,bool> = HashMap::new();
+    let mut used_maxi: HashMap<String,bool> = HashMap::new();
+
+    let mut rest_maxmin = MaxMin{max:0, min:<u64>::max_value()};
+    let mut maxi_maxmin = MaxMin{max:0, min:<u64>::max_value()};
+
+    while rest_pred_set.len() > 0 && anticone_blue_count <= k {
+
+        let mut new_rest_pred: HashMap<String,Arc<RwLock<Block>>> = HashMap::new();
+        let _rest_local_maxmin = step_one_past(&rest_pred_set, &mut new_rest_pred, &mut used_rest, &mut rest_maxmin);
+
+        //let mut maxi_height_max = 0;
+        loop {
+            let mut new_maxi_pred: HashMap<String,Arc<RwLock<Block>>> = HashMap::new();
+            let max_local_maxmin = step_one_past(&maxi_pred_set, &mut new_maxi_pred, &mut used_maxi, &mut maxi_maxmin);
+
+            append_maps(&mut maxi_pred_set, &new_maxi_pred);
+            drop(new_maxi_pred);
+
+            if max_local_maxmin.max <= rest_maxmin.min {
+                //maxi_height_max = max_local_maxmin.max;
+                break;
+            }
+        }
+
+        //println!("tips_anticone(): tip={} rest_height_min={} rest={:?} maxi_height_max={} max={:?} size_of_anticone={}", tip_name, rest_maxmin.min,
+        //         sorted_keys_by_height(&new_rest_pred, true).iter().map(|&(ref n,_)|{n}).collect::<Vec<_>>(),
+        //         maxi_height_max, sorted_keys_by_height(&maxi_pred_set, true).iter().map(|&(ref n,_)|{n}).collect::<Vec<_>>(),
+        //         anticone.len());
+        let rest_keys = new_rest_pred.iter().map(|(k,_)|{k.clone()}).collect::<Vec<String>>();
+        for name in &rest_keys {
+            if maxi_pred_set.get(name).is_some() {
+                new_rest_pred.remove(name);
+            }
+        }
+
+        for (key, value) in &new_rest_pred {
+
+            let rest = &value.read().unwrap();
+            if rest.is_blue {
+                if let Entry::Vacant(v) = anticone.entry(key.clone()) {
+                    v.insert(Arc::clone(value));
+                    anticone_blue_count += 1;
+                }
+            }
+        }
+
+        rest_pred_set = new_rest_pred;
+        //println!("tips_anticone(): tip={} size_of_anticone={} rest_pred_set={}", tip_name, anticone.len(), rest_pred_set.len());
+    }
+    //println!("tips_anticone(): tip={} final result: size_of_anticone={}", tip_name, anticone.len());
+
+    return (anticone_blue_count,anticone);
 }
 
 

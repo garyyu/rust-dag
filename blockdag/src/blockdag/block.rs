@@ -27,6 +27,9 @@ pub struct Block{
     pub name: String,
     pub height: u64,
     pub size_of_past_set: u64,
+    pub size_of_past_blue: u64,
+    pub is_blue: bool,
+    pub size_of_anticone_blue: i32,
     pub prev: HashMap<String, Arc<RwLock<Block>>>,
     pub next: HashMap<String, Arc<RwLock<Block>>>,
 }
@@ -40,7 +43,7 @@ impl fmt::Display for Block {
 
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
 
-        let mut formated_info = format!("name={},height={},size_of_past_set={},prev={{", self.name, self.height, self.size_of_past_set);
+        let mut formated_info = format!("name={},height={},size_of_past_set={},size_of_past_blue={},blue={},size_of_anticone_blue={},prev={{", self.name, self.height, self.size_of_past_set, self.size_of_past_blue, self.is_blue, self.size_of_anticone_blue);
 
         for (key, _value) in &self.prev {
 

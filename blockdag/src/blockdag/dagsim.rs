@@ -27,6 +27,9 @@ pub fn dag_add_block(name: &str, references: &Vec<&str>, dag: &mut HashMap<Strin
         name: String::from(name.clone()),
         height: 0,
         size_of_past_set: 0,
+        size_of_past_blue: 0,
+        is_blue: false,
+        size_of_anticone_blue: -1,
         prev: HashMap::new(),
         next: HashMap::new(),
     }));
@@ -63,10 +66,11 @@ pub fn dag_add_block(name: &str, references: &Vec<&str>, dag: &mut HashMap<Strin
     }
 
     // size of pastset
-    let size_of_past_set = sizeof_pastset(&this_block.read().unwrap());
+    let (size_of_past_set,size_of_past_blue) = sizeof_pastset(&this_block.read().unwrap());
     {
         let mut this_block_w = this_block.write().unwrap();
         this_block_w.size_of_past_set = size_of_past_set;
+        this_block_w.size_of_past_blue = size_of_past_blue;
     }
 
     dag.insert(String::from(name.clone()), this_block);

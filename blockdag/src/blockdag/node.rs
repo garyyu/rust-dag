@@ -30,6 +30,7 @@ pub struct Node{
     pub size_of_dag: u64,
     pub dag: HashMap<String, Arc<RwLock<Block>>>,
     pub tips: HashMap<String, Arc<RwLock<Block>>>,
+    pub hourglass: Vec<(u64,u64)>,
 }
 
 impl Node {
@@ -41,6 +42,7 @@ impl Node {
             size_of_dag: 0,
             dag: HashMap::new(),
             tips: HashMap::new(),
+            hourglass: Vec::new(),
         }));
 
         return node;
@@ -104,6 +106,9 @@ pub fn node_add_block(name_of_new_block: &str, references: &Vec<&str>, node: &mu
     if do_update_tips {
         update_tips(name_of_new_block, node);
     }
+
+    // calculate blue
+
 }
 
 pub fn update_tips(name_of_new_block: &str, node: &mut Node){

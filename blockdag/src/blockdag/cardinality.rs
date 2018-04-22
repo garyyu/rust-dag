@@ -23,12 +23,13 @@ use blockdag::{Block,MaxMin,append_maps};
 
 /// Function providing cardinality of pastset blocks calculation.
 ///
-pub fn sizeof_pastset(block: &Block) -> u64{
+pub fn sizeof_pastset(block: &Block) -> (u64,u64){
 
     let mut size_of_past: u64 = 0;
+    let mut size_of_past_blue: u64 = 0;
 
     if block.prev.len()==0 {
-        return size_of_past;
+        return (size_of_past,size_of_past_blue);
     }
 
     let mut maxi_pred_set: HashMap<String,Arc<RwLock<Block>>> = HashMap::new();
@@ -49,7 +50,11 @@ pub fn sizeof_pastset(block: &Block) -> u64{
         }
 
         if prev.name == "Genesis" {
-            return 1;
+            return (1,1);
+        }
+
+        if prev.is_blue {
+            size_of_past_blue += 1;
         }
 
         rest_pred_set.insert(String::from(prev.name.clone()), Arc::clone(value));
@@ -65,6 +70,7 @@ pub fn sizeof_pastset(block: &Block) -> u64{
     rest_pred_set.remove(&bmax_name);
 
     size_of_past = max_sizeofpast + block.prev.len() as u64;
+    size_of_past_blue += bmax_block.read().unwrap().size_of_past_blue;
     //println!("sizeof_pastset(): block={} bmax={} size_of_past={}", block.name, bmax_name, size_of_past);
 
     let mut used_rest: HashMap<String,bool> = HashMap::new();
@@ -104,6 +110,12 @@ pub fn sizeof_pastset(block: &Block) -> u64{
         }
 
         size_of_past += new_rest_pred.len() as u64;
+        for (_,value) in &new_rest_pred {
+            let rest = &value.read().unwrap();
+            if rest.is_blue {
+                size_of_past_blue += 1;
+            }
+        }
 
         drop(rest_pred_set);
         rest_pred_set = new_rest_pred;
@@ -111,7 +123,7 @@ pub fn sizeof_pastset(block: &Block) -> u64{
     }
     //println!("sizeof_pastset(): block={} final result: size_of_past={}", block.name, size_of_past);
 
-    return size_of_past;
+    return (size_of_past,size_of_past_blue);
 }
 
 pub fn step_one_past(pred: &HashMap<String,Arc<RwLock<Block>>>, new_pred: &mut HashMap<String,Arc<RwLock<Block>>>, used: &mut HashMap<String,bool>, maxmin: &mut MaxMin) -> MaxMin{
