@@ -42,17 +42,27 @@ mod tests {
         node_add_block("B", &vec!["Genesis"], &mut node_w, true);
         calc_blue("B", &mut node_w, 3);
         node_add_block("C", &vec!["Genesis"], &mut node_w, true);
+        calc_blue("C", &mut node_w, 3);
         node_add_block("D", &vec!["Genesis"], &mut node_w, true);
+        calc_blue("D", &mut node_w, 3);
         node_add_block("E", &vec!["Genesis"], &mut node_w, true);
+        calc_blue("E", &mut node_w, 3);
 
         node_add_block("F", &vec!["B","C"], &mut node_w, true);
+        calc_blue("F", &mut node_w, 3);
         node_add_block("H", &vec!["C","D","E"], &mut node_w, true);
+        calc_blue("H", &mut node_w, 3);
         node_add_block("I", &vec!["E"], &mut node_w, true);
+        calc_blue("I", &mut node_w, 3);
 
         node_add_block("J", &vec!["F","H"], &mut node_w, true);
+        calc_blue("J", &mut node_w, 3);
         node_add_block("K", &vec!["B","H","I"], &mut node_w, true);
+        calc_blue("K", &mut node_w, 3);
         node_add_block("L", &vec!["D","I"], &mut node_w, true);
+        calc_blue("L", &mut node_w, 3);
         node_add_block("M", &vec!["F","K"], &mut node_w, true);
+        calc_blue("M", &mut node_w, 3);
 
         println!("{}", &node_w);
 
