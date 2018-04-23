@@ -24,14 +24,15 @@ use std::cmp::Ordering;
 /// Structure providing fast access to block data.
 ///
 pub struct Block{
-    pub name: String,
-    pub height: u64,
-    pub size_of_past_set: u64,
-    pub size_of_past_blue: u64,
-    pub is_blue: bool,
-    pub size_of_anticone_blue: i32,
-    pub prev: HashMap<String, Arc<RwLock<Block>>>,
-    pub next: HashMap<String, Arc<RwLock<Block>>>,
+    pub name: String,                                       // bits stream, local verified. that is: hash of block head. (in simulation we use a readable string)
+    pub height: u64,                                        // bits stream, local verified.
+    pub size_of_past_set: u64,                              // bits stream, local verified.
+    pub size_of_past_blue: u64,                             // local generated.
+    pub is_blue: bool,                                      // local generated.
+    pub size_of_anticone_blue: i32,                         // local generated.
+    pub prev: HashMap<String, Arc<RwLock<Block>>>,          // bits stream.
+    pub next: HashMap<String, Arc<RwLock<Block>>>,          // local generated, not in bits stream transmitting
+    pub tips_snapshot: HashMap<String, Arc<RwLock<Block>>>, // local generated. a snapshot of tips at the time of block added to the local dag. after added.
 }
 
 pub struct MaxMin{

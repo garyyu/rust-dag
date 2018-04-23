@@ -32,6 +32,7 @@ pub fn dag_add_block(name: &str, references: &Vec<&str>, dag: &mut HashMap<Strin
         size_of_anticone_blue: -1,
         prev: HashMap::new(),
         next: HashMap::new(),
+        tips_snapshot: HashMap::new(),
     }));
 
     //add references

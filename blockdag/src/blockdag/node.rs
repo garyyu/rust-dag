@@ -30,7 +30,6 @@ pub struct Node{
     pub size_of_dag: u64,
     pub dag: HashMap<String, Arc<RwLock<Block>>>,
     pub tips: HashMap<String, Arc<RwLock<Block>>>,
-    pub old_tips: HashMap<String, Arc<RwLock<Block>>>,
     pub classmates: HashMap<u64, Vec<String>>,
     pub hourglass: Vec<(u64,u64)>,
 }
@@ -44,7 +43,6 @@ impl Node {
             size_of_dag: 0,
             dag: HashMap::new(),
             tips: HashMap::new(),
-            old_tips: HashMap::new(),
             classmates: HashMap::new(),
             hourglass: Vec::new(),
         }));
@@ -113,6 +111,9 @@ pub fn node_add_block(name_of_new_block: &str, references: &Vec<&str>, node: &mu
             //todo: limit the classmates size, only keep latest heights.
 
             node.size_of_dag += 1;
+        }else{
+            warn!("node_add_block(): block not found in dag. dag_add_block failed?");
+            return;
         }
     }
 
@@ -120,6 +121,13 @@ pub fn node_add_block(name_of_new_block: &str, references: &Vec<&str>, node: &mu
 
         // update tips
         update_tips(name_of_new_block, node);
+
+        // keep this tips in the block as the snapshot tips
+        {
+            let block = Arc::clone(&node.dag.get(name_of_new_block).unwrap());
+            let block_w = &mut block.write().unwrap();
+            block_w.tips_snapshot = node.tips.clone();
+        }
 
         // calculate blue
         calc_blue(name_of_new_block, node, k);
@@ -137,8 +145,6 @@ pub fn update_tips(name_of_new_block: &str, node: &mut Node){
     if block.is_none() {
         return;
     }
-
-    node.old_tips = node.tips.clone();
 
     let new_block = Arc::clone(block.unwrap());
     let new_block = new_block.read().unwrap();

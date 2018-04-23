@@ -114,24 +114,10 @@ pub fn anticone_blue(any_name: &str, node: &Node, tips: &HashMap<String, Arc<RwL
         return tips_anticone_blue(any_name, tips, k);
     }
 
-    // firstly, we have to create a virtual tips, a nice way is to find which have the same height as the 'any_name' block.
-    let mut virtual_tips: HashMap<String, Arc<RwLock<Block>>> = HashMap::new();
-    {
-        let dag = &node.dag;
-        let the_height = dag.get(any_name).unwrap().read().unwrap().height;
-
-        let classmate = &node.classmates.get(&the_height);
-        if classmate.is_none() {
-            error!("anticone_blue(): classmates don't have such height! input block's height={}", the_height);
-            return (-1, HashMap::new());
-        }else{
-            let classmate = classmate.unwrap();
-            for name in classmate {
-                virtual_tips.insert(name.clone(), Arc::clone(dag.get(name).unwrap()));
-            }
-        }
-    }
-    debug!("anticone_blue(): virtual tips={:?}", sorted_keys_by_height(&virtual_tips, false).iter().map(|&(ref n,_)|{n}).collect::<Vec<_>>());
+    // firstly, we have to create a virtual tips, a nice way is to find the block's tips snapshot when it's added to the dag
+    let dag = &node.dag;
+    let virtual_tips = dag.get(any_name).unwrap().read().unwrap().tips_snapshot.clone();
+    debug!("anticone_blue(): k={}. virtual tips={:?}", k, sorted_keys_by_height(&virtual_tips, false).iter().map(|&(ref n,_)|{n}).collect::<Vec<_>>());
 
     // left half
     let (anticone_blue_count_left,mut anticone_left) = tips_anticone_blue(any_name, &virtual_tips, k);

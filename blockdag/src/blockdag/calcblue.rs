@@ -106,10 +106,7 @@ pub fn calc_blue(block_name: &str, node: &mut Node, k: i32){
             // step 6
             debug!("calc_blue(): step 6. block {}. come to block {}", block_name, name);
             {
-                let old_tips = &node.old_tips;
-                //let block_r = dag.get(block_name).unwrap().read().unwrap();
-                let (blues, blue_anticone) = anticone_blue(name, node, old_tips, k);
-                //drop(block_r);
+                let (blues, blue_anticone) = anticone_blue(name, node, tips, k);
 
                 if blues >= 0 && blues <= k {
 
