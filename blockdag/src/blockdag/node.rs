@@ -87,7 +87,7 @@ impl fmt::Display for Node {
 }
 
 
-pub fn node_add_block(name_of_new_block: &str, references: &Vec<&str>, node: &mut Node, do_update_tips: bool) {
+pub fn node_add_block(name_of_new_block: &str, references: &Vec<&str>, node: &mut Node, k: i32, do_update_tips: bool) {
 
     // add block
     {
@@ -122,7 +122,7 @@ pub fn node_add_block(name_of_new_block: &str, references: &Vec<&str>, node: &mu
         update_tips(name_of_new_block, node);
 
         // calculate blue
-        calc_blue(name_of_new_block, node, 5);
+        calc_blue(name_of_new_block, node, k);
     }
 
 }
