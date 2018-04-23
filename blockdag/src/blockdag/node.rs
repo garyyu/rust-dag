@@ -102,13 +102,15 @@ pub fn node_add_block(name_of_new_block: &str, references: &Vec<&str>, node: &mu
         }
     }
 
-    // update tips
     if do_update_tips {
+
+        // update tips
         update_tips(name_of_new_block, node);
+
+        // calculate blue
+        calc_blue(name_of_new_block, node, 5);
     }
 
-    // calculate blue
-    calc_blue(name_of_new_block, node, 3);
 }
 
 pub fn update_tips(name_of_new_block: &str, node: &mut Node){

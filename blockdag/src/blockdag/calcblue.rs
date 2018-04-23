@@ -73,23 +73,22 @@ pub fn calc_blue(block_name: &str, node: &mut Node, k: i32){
         // step 4
         {
             let (blues, blue_anticone) = tips_anticone_blue(block_name, tips, k);
-            if blues >= 0 && blues <= k {
-
-                // step 4.1
-                {
-                    let mut block_w = dag.get(block_name).unwrap().write().unwrap();
-                    block_w.is_blue = true;
-                    block_w.size_of_anticone_blue = blues;
-                    drop(block_w);
-                    //println!("calc_blue(): step 4.1. block {}. add {} to the blue. size_of_anticone_blue={}", block_name, block_name, blues);
-
-                }   // scope to limit the lifetime of 'write()' lock.
-
-                // step 4.2
-                check_blue(&blue_anticone, k);
-            } else {
-                println!("calc_blue(): block {}. error! should be blue, but anticone blues={}", block_name, blues);
+            if blues < 0 || blues > k {
+                println!("calc_blue(): block {}. warning! should be blue, but anticone blues={}", block_name, blues);
             }
+
+            // step 4.1
+            {
+                let mut block_w = dag.get(block_name).unwrap().write().unwrap();
+                block_w.is_blue = true;
+                block_w.size_of_anticone_blue = blues;
+                drop(block_w);
+                //println!("calc_blue(): step 4.1. block {}. add {} to the blue. size_of_anticone_blue={}", block_name, block_name, blues);
+
+            }   // scope to limit the lifetime of 'write()' lock.
+
+            // step 4.2
+            check_blue(&blue_anticone, k);
 
         }   // scope to limit the lifetime of blue_anticone.
 

@@ -164,7 +164,7 @@ mod tests {
 
         let mut blocks_generated = 0;
 
-        for _height in 2..10000 {
+        for _height in 2..100 {
             let classmate_blocks = rand::thread_rng().gen_range(1, max_classmate_blocks+1);
 //            let back_steps = rand::thread_rng().gen_range(1, max_back_steps+1);
             //println!("height={} classmate_blocks={}", height, classmate_blocks);
@@ -230,6 +230,7 @@ mod tests {
             let mut classmate_name = blocks_generated;
             for _classmate in 1..classmate_blocks+1 {
                 update_tips(&classmate_name.to_string(), &mut node_w);
+                calc_blue(&classmate_name.to_string(), &mut node_w, max_classmate_blocks);
                 classmate_name -= 1;
             }
         }
@@ -240,6 +241,87 @@ mod tests {
 
         println!("node=\"{}\",height={},size_of_dag={}", node_w.name, node_w.height, node_w.size_of_dag);
         println!("total time used: {} (ms)", total_time_used);
+        dag_print(&node_w.dag);
+
+        assert_eq!(2 + 2, 4);
+    }
+
+    #[test]
+    fn test_figX1() {
+
+        let node = Node::init("figX1");
+
+        let mut node_w = node.write().unwrap();
+
+        node_add_block("Genesis", &Vec::new(), &mut node_w, true);
+
+        node_add_block("B", &vec!["Genesis"], &mut node_w, true);
+        node_add_block("C", &vec!["Genesis"], &mut node_w, true);
+        node_add_block("D", &vec!["Genesis"], &mut node_w, true);
+        node_add_block("E", &vec!["Genesis"], &mut node_w, true);
+
+        node_add_block("1", &vec!["B","C","D","E"], &mut node_w, true);
+        node_add_block("2", &vec!["B","E"], &mut node_w, true);
+        node_add_block("3", &vec!["B","C","D","E"], &mut node_w, true);
+        node_add_block("4", &vec!["E"], &mut node_w, true);
+
+        node_add_block("5", &vec!["1","4"], &mut node_w, true);
+        node_add_block("6", &vec!["1","3","4"], &mut node_w, true);
+        node_add_block("7", &vec!["1","2"], &mut node_w, true);
+
+        node_add_block("8", &vec!["2","3","5"], &mut node_w, true);
+        node_add_block("9", &vec!["5","6","7"], &mut node_w, true);
+
+        node_add_block("10", &vec!["8","9"], &mut node_w, true);
+        node_add_block("11", &vec!["8","9"], &mut node_w, true);
+
+        node_add_block("12", &vec!["11"], &mut node_w, true);
+        node_add_block("13", &vec!["10","11"], &mut node_w, true);
+
+        node_add_block("14", &vec!["13"], &mut node_w, true);
+        node_add_block("15", &vec!["12","13"], &mut node_w, true);
+
+        node_add_block("16", &vec!["12","14"], &mut node_w, true);
+        node_add_block("17", &vec!["15","16"], &mut node_w, true);
+        node_add_block("18", &vec!["16"], &mut node_w, true);
+
+        node_add_block("19", &vec!["17","18"], &mut node_w, true);
+        node_add_block("20", &vec!["17","18"], &mut node_w, true);
+        node_add_block("21", &vec!["17"], &mut node_w, true);
+        node_add_block("22", &vec!["17","18"], &mut node_w, true);
+        node_add_block("23", &vec!["17","18"], &mut node_w, true);
+
+        node_add_block("24", &vec!["19","23"], &mut node_w, true);
+        node_add_block("25", &vec!["23"], &mut node_w, true);
+        node_add_block("26", &vec!["23"], &mut node_w, true);
+
+        node_add_block("27", &vec!["20","22","24","26"], &mut node_w, true);
+        node_add_block("28", &vec!["21","22","24"], &mut node_w, true);
+        node_add_block("29", &vec!["22","24","25","26"], &mut node_w, true);
+        node_add_block("30", &vec!["21","24","25","26"], &mut node_w, true);
+        node_add_block("31", &vec!["24"], &mut node_w, true);
+
+        node_add_block("32", &vec!["22","25","31"], &mut node_w, true);
+        node_add_block("33", &vec!["26","31"], &mut node_w, true);
+        node_add_block("34", &vec!["22","31"], &mut node_w, true);
+
+        node_add_block("35", &vec!["20","26","28","34"], &mut node_w, true);
+        node_add_block("36", &vec!["20","28","30","33","34"], &mut node_w, true);
+        node_add_block("37", &vec!["32"], &mut node_w, true);
+        node_add_block("38", &vec!["20","32","33"], &mut node_w, true);
+        node_add_block("39", &vec!["32"], &mut node_w, true);
+
+        node_add_block("40", &vec!["21","33","37","39"], &mut node_w, true);
+        node_add_block("41", &vec!["21","26","34","37"], &mut node_w, true);
+
+        node_add_block("42", &vec!["27","29","36","39","41"], &mut node_w, true);
+        node_add_block("43", &vec!["28","29","33","41"], &mut node_w, true);
+        node_add_block("44", &vec!["29","32"], &mut node_w, true);
+        node_add_block("45", &vec!["27","29","36","38","40"], &mut node_w, true);
+
+        println!("{}", &node_w);
+
+        dag_print(&node_w.dag);
 
         assert_eq!(2 + 2, 4);
     }
