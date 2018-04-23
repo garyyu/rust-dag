@@ -29,103 +29,104 @@ pub fn calc_blue(block_name: &str, node: &mut Node, k: i32){
     println!("calc_blue(): block {}. func enter.", block_name);
 
     let dag = &node.dag;
-    let block = dag.get(block_name);
-    if block.is_none() {
-        println!("calc_blue(): error! block {} not exist in dag.", block_name);
-        return;
 
-    }
+    {
+        let block = dag.get(block_name);
+        if block.is_none() {
+            println!("calc_blue(): error! block {} not exist in dag.", block_name);
+            return;
+        }
+    }   // scope to limit the lifetime of block.
 
-    let block_r = block.unwrap().read().unwrap();
-
-    if block_r.name=="Genesis" {
-        drop(block_r);
+    if block_name=="Genesis" {
         let mut block_w = dag.get(block_name).unwrap().write().unwrap();
         block_w.is_blue = true;
         return;
     }
 
-    // step 2
-    let mut tip_max_name = String::from(block_name.clone());
-    let mut max_past_blue: u64 = block_r.size_of_past_blue;
     let tips = &node.tips;
     if tips.len() == 0 {
         println!("calc_blue(): error! tips must not be empty.");
         return;
     }
 
-    for (key, value) in tips {
-//        if key.eq(&tip_max_name) {
-//            continue;
-//        }
-//        println!("calc_blue(): block {}. come to tip {}", block_name, key);
+    // step 2
+    let mut tip_max_name = String::new();
+    let mut max_past_blue: u64 = 0;
+    for (name, value) in tips {
 
         let tip = &value.read().unwrap();
-        if &tip.name == &tip_max_name {
-            continue;
-        }
-        println!("calc_blue(): block {}. come to tip {}", block_name, key);
-
         if tip.size_of_past_blue > max_past_blue {
             max_past_blue = tip.size_of_past_blue;
             tip_max_name = tip.name.clone();
         }
-    }
+
+    }   // scope to limit the lifetime of 'read()' lock.
 
     println!("calc_blue(): block {}.tip_max_name={},max_past_blue={}", block_name, tip_max_name, max_past_blue);
 
     // step 3
     if &tip_max_name == block_name {
 
-        println!("calc_blue(): block {}. new block is the max past blue", block_name);
+        println!("calc_blue(): step 3. block {}. new block is the max past blue", block_name);
 
         // step 4
-        drop(block_r);
-
         {
             let (blues, blue_anticone) = tips_anticone_blue(block_name, tips, k);
             if blues >= 0 && blues <= k {
+
                 // step 4.1
-                let mut block_w = dag.get(block_name).unwrap().write().unwrap();
-                block_w.is_blue = true;
-                block_w.size_of_anticone_blue = blues;
-                drop(block_w);
-                println!("calc_blue(): block {}. add {} to the blue. size_of_anticone_blue={}", block_name, block_name, blues);
+                {
+                    let mut block_w = dag.get(block_name).unwrap().write().unwrap();
+                    block_w.is_blue = true;
+                    block_w.size_of_anticone_blue = blues;
+                    drop(block_w);
+                    println!("calc_blue(): step 4.1. block {}. add {} to the blue. size_of_anticone_blue={}", block_name, block_name, blues);
+
+                }   // scope to limit the lifetime of 'write()' lock.
 
                 // step 4.2
                 check_blue(&blue_anticone, k);
             } else {
                 println!("calc_blue(): block {}. error! should be blue, but anticone blues={}", block_name, blues);
             }
-            drop(blue_anticone);
-        }
+
+        }   // scope to limit the lifetime of blue_anticone.
 
         // step 5
         let block_r = dag.get(block_name).unwrap().read().unwrap();
-        for (name, value) in &block_r.prev {
+        let prev_keys = block_r.prev.iter().map(|(k,_)|{k.clone()}).collect::<Vec<String>>();
+        drop(block_r);  // must be released immediately, otherwise the following loop could enter deadlock.
 
-            let pred = value.read().unwrap();
-            if pred.is_blue {
+        for name in &prev_keys {
+
+            if dag.get(name).unwrap().read().unwrap().is_blue {
                 continue;
-            }
-            drop(pred);
+            }   // if expression has an implicit scope, so the 'read()' lock will be released immediately after if {}.
 
             // step 6
+            println!("calc_blue(): step 6. block {}. come to block {}", block_name, name);
             {
+                let block_r = dag.get(block_name).unwrap().read().unwrap();
                 let (blues, blue_anticone) = tips_anticone_blue(name, &block_r.prev, k);
+                drop(block_r);
+                
                 if blues >= 0 && blues <= k {
+
                     // step 7
-                    let mut pred = value.write().unwrap();
-                    pred.is_blue = true;
-                    pred.size_of_anticone_blue = blues;
-                    println!("calc_blue(): block {}. add {} to the blue. size_of_anticone_blue={}", block_name, pred.name, blues);
-                    drop(pred);
+                    println!("calc_blue(): step 7. block {}. query block {}: size_of_anticone_blue={}. try to write_lock {}", block_name, name, blues, name);
+                    {
+                        let mut pred = dag.get(name).unwrap().write().unwrap();
+                        pred.is_blue = true;
+                        pred.size_of_anticone_blue = blues;
+                        println!("calc_blue(): step 7. block {}. add {} to the blue. size_of_anticone_blue={}", block_name, pred.name, blues);
+
+                    }   // scope to limit the lifetime of 'write()' lock.
 
                     // step 8
                     check_blue(&blue_anticone, k);
                 }
-                drop(blue_anticone);
-            }
+            }   // scope to limit the lifetime of blue_anticone.
         }
     }else{
 
@@ -135,7 +136,6 @@ pub fn calc_blue(block_name: &str, node: &mut Node, k: i32){
         let (blues,blue_anticone) = tips_anticone_blue(block_name, tips, k);
         if blues>=0 && blues<=k {
 
-            drop(block_r);
             let mut block_w = dag.get(block_name).unwrap().write().unwrap();
 
             // step 12
@@ -155,18 +155,23 @@ pub fn calc_blue(block_name: &str, node: &mut Node, k: i32){
 
 fn check_blue(blue_anticone: &HashMap<String, Arc<RwLock<Block>>>, k: i32) {
 
+    let mut used: HashMap<String,bool> = HashMap::new();    // to avoid wrong multiple processing
+
     for (key, value) in blue_anticone {
 
-        let mut block = value.write().unwrap();
-        if block.size_of_anticone_blue >= k {
-            block.is_blue = false;
-            block.size_of_anticone_blue = -1;
-            println!("check_blue(): remove {} from blue", block.name);
+        println!("check_blue(): try to write_lock {}", key);
+        let mut block_w = value.write().unwrap();
+        if block_w.size_of_anticone_blue >= k {
+            block_w.is_blue = false;
+            block_w.size_of_anticone_blue = -1;
+            println!("check_blue(): remove {} from blue", block_w.name);
 
-            dec_successors_anticone_blue(&block);
-        }else if block.is_blue{
-            block.size_of_anticone_blue += 1;
-            println!("check_blue(): {} size_of_anticone_blue increase to {}", block.name, block.size_of_anticone_blue);
+            drop(block_w);
+            let block_r = value.read().unwrap();
+            dec_successors_anticone_blue(&block_r, &mut used);
+        }else if block_w.is_blue{
+            block_w.size_of_anticone_blue += 1;
+            println!("check_blue(): {} size_of_anticone_blue increase to {}", block_w.name, block_w.size_of_anticone_blue);
         }
     }
 }
@@ -175,14 +180,25 @@ fn check_blue(blue_anticone: &HashMap<String, Arc<RwLock<Block>>>, k: i32) {
 ///
 /// todo: this iteration could be terrible in performance!
 ///
-fn dec_successors_anticone_blue(block: &Block){
+fn dec_successors_anticone_blue(block: &Block, used: &mut HashMap<String,bool>){
 
     for (key, value) in &block.next {
 
-        let mut next = value.write().unwrap();
-        if next.is_blue {
-            next.size_of_past_blue -= 1;
+        if used.get(key).is_some() {
+            continue;
+        }else{
+            used.insert(key.clone(), true);
         }
-        dec_successors_anticone_blue(&next);
+
+        println!("dec_successors_anticone_blue(): try to write_lock {}", key);
+        {
+            let mut next = value.write().unwrap();
+            if next.is_blue {
+                next.size_of_past_blue -= 1;
+            }
+        }   // scope to limit the lifetime of 'write()' lock.
+
+        let next = &value.read().unwrap();
+        dec_successors_anticone_blue(next, used);
     }
 }
