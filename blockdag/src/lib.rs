@@ -17,8 +17,14 @@
 pub mod blockdag;
 
 
+#[macro_use]
+extern crate log;
+
 #[cfg(test)]
 mod tests {
+
+    extern crate env_logger;
+
     extern crate rand;
     extern crate time;
 
@@ -248,6 +254,8 @@ mod tests {
 
     #[test]
     fn test_figX1() {
+
+        let _ = env_logger::try_init();
 
         let node = Node::init("figX1");
 

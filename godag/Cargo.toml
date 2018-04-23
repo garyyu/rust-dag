@@ -5,3 +5,5 @@ authors = ["Gary YU <gary.yu@keylert.com>"]
 
 [dependencies]
 blockdag = { path = "../blockdag" }
+log = "0.4.0"
+env_logger = "0.5.9"
