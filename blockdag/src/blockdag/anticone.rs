@@ -131,10 +131,11 @@ pub fn anticone_blue(any_name: &str, node: &Node, tips: &HashMap<String, Arc<RwL
             }
         }
     }
+    debug!("anticone_blue(): virtual tips={:?}", sorted_keys_by_height(&virtual_tips, false).iter().map(|&(ref n,_)|{n}).collect::<Vec<_>>());
 
     // left half
     let (anticone_blue_count_left,mut anticone_left) = tips_anticone_blue(any_name, &virtual_tips, k);
-    debug!("anticone_blue(): left half anticone_blue_count={}", anticone_blue_count_left);
+    debug!("anticone_blue(): left half anticone_blue_count={}, anticone_blue={:?}", anticone_blue_count_left, sorted_keys_by_height(&anticone_left, true).iter().map(|&(ref n,_)|{n}).collect::<Vec<_>>());
     if anticone_blue_count_left > k {
         return (anticone_blue_count_left, anticone_left);
     }
@@ -151,11 +152,13 @@ pub fn anticone_blue(any_name: &str, node: &Node, tips: &HashMap<String, Arc<RwL
 ///
 pub fn tips_anticone_blue(tip_name: &str, tips: &HashMap<String, Arc<RwLock<Block>>>, k: i32) -> (i32,HashMap<String, Arc<RwLock<Block>>>){
 
+    debug!("tips_anticone_blue(): tip={} func enter. tips={:?}", tip_name, sorted_keys_by_height(tips, true).iter().map(|&(ref n,_)|{n}).collect::<Vec<_>>());
+
     let mut anticone_blue_count: i32 = 0;
     let mut anticone: HashMap<String,Arc<RwLock<Block>>> = HashMap::new();
 
     if tips.len()==0 {
-        println!("tips_anticone_blue(): tip={} error! tips is empty", tip_name);
+        error!("tips_anticone_blue(): tip={} error! tips is empty", tip_name);
         return (-1,anticone);
     }
 
@@ -178,11 +181,11 @@ pub fn tips_anticone_blue(tip_name: &str, tips: &HashMap<String, Arc<RwLock<Bloc
     }
 
     if maxi_pred_set.len()==0 {
-        println!("tips_anticone_blue(): error! tip {} is not in tips", tip_name);
+        error!("tips_anticone_blue(): error! tip {} is not in tips", tip_name);
         return (-1,HashMap::new());
     }
 
-    //println!("tips_anticone(): tip={} size_of_anticone={}", tip_name, anticone.len());
+    debug!("tips_anticone_blue(): tip={} size_of_anticone_blue={}", tip_name, anticone.len());
 
     let mut used_rest: HashMap<String,bool> = HashMap::new();
     let mut used_maxi: HashMap<String,bool> = HashMap::new();
@@ -195,7 +198,7 @@ pub fn tips_anticone_blue(tip_name: &str, tips: &HashMap<String, Arc<RwLock<Bloc
         let mut new_rest_pred: HashMap<String,Arc<RwLock<Block>>> = HashMap::new();
         let _rest_local_maxmin = step_one_past(&rest_pred_set, &mut new_rest_pred, &mut used_rest, &mut rest_maxmin);
 
-        //let mut maxi_height_max = 0;
+        let mut maxi_height_max = 0;
         loop {
             let mut new_maxi_pred: HashMap<String,Arc<RwLock<Block>>> = HashMap::new();
             let max_local_maxmin = step_one_past(&maxi_pred_set, &mut new_maxi_pred, &mut used_maxi, &mut maxi_maxmin);
@@ -204,15 +207,15 @@ pub fn tips_anticone_blue(tip_name: &str, tips: &HashMap<String, Arc<RwLock<Bloc
             drop(new_maxi_pred);
 
             if max_local_maxmin.max <= rest_maxmin.min {
-                //maxi_height_max = max_local_maxmin.max;
+                maxi_height_max = max_local_maxmin.max;
                 break;
             }
         }
 
-        //println!("tips_anticone(): tip={} rest_height_min={} rest={:?} maxi_height_max={} max={:?} size_of_anticone={}", tip_name, rest_maxmin.min,
-        //         sorted_keys_by_height(&new_rest_pred, true).iter().map(|&(ref n,_)|{n}).collect::<Vec<_>>(),
-        //         maxi_height_max, sorted_keys_by_height(&maxi_pred_set, true).iter().map(|&(ref n,_)|{n}).collect::<Vec<_>>(),
-        //         anticone.len());
+        debug!("tips_anticone_blue(): tip={} rest_height_min={} rest={:?} maxi_height_max={} max={:?} size_of_anticone={}", tip_name, rest_maxmin.min,
+                 sorted_keys_by_height(&new_rest_pred, true).iter().map(|&(ref n,_)|{n}).collect::<Vec<_>>(),
+                 maxi_height_max, sorted_keys_by_height(&maxi_pred_set, true).iter().map(|&(ref n,_)|{n}).collect::<Vec<_>>(),
+                 anticone.len());
         let rest_keys = new_rest_pred.iter().map(|(k,_)|{k.clone()}).collect::<Vec<String>>();
         for name in &rest_keys {
             if maxi_pred_set.get(name).is_some() {
@@ -232,9 +235,9 @@ pub fn tips_anticone_blue(tip_name: &str, tips: &HashMap<String, Arc<RwLock<Bloc
         }
 
         rest_pred_set = new_rest_pred;
-        //println!("tips_anticone(): tip={} size_of_anticone={} rest_pred_set={}", tip_name, anticone.len(), rest_pred_set.len());
+        debug!("tips_anticone_blue(): tip={} size_of_anticone={} rest_pred_set={}", tip_name, anticone.len(), rest_pred_set.len());
     }
-    //println!("tips_anticone(): tip={} final result: size_of_anticone={}", tip_name, anticone.len());
+    debug!("tips_anticone_blue(): tip={} final result: size_of_anticone={}", tip_name, anticone.len());
 
     return (anticone_blue_count,anticone);
 }
@@ -269,7 +272,7 @@ pub fn tips_anticone_blue_rev(tip_name: &str, tips: &HashMap<String, Arc<RwLock<
         return (-1,HashMap::new());
     }
 
-    //debug!("tips_anticone_blue_rev(): tip={} size_of_anticone={}", tip_name, anticone.len());
+    debug!("tips_anticone_blue_rev(): tip={} size_of_anticone_blue={}", tip_name, anticone.len());
 
     let mut used_rest: HashMap<String,bool> = HashMap::new();
     let mut used_maxi: HashMap<String,bool> = HashMap::new();
@@ -282,7 +285,7 @@ pub fn tips_anticone_blue_rev(tip_name: &str, tips: &HashMap<String, Arc<RwLock<
         let mut new_rest_pred: HashMap<String,Arc<RwLock<Block>>> = HashMap::new();
         let _rest_local_maxmin = step_one_next(&rest_pred_set, &mut new_rest_pred, &mut used_rest, &mut rest_maxmin);
 
-        //let mut maxi_height_min = 0;
+        let mut maxi_height_min = 0;
         loop {
             let mut new_maxi_pred: HashMap<String,Arc<RwLock<Block>>> = HashMap::new();
             let max_local_maxmin = step_one_next(&maxi_pred_set, &mut new_maxi_pred, &mut used_maxi, &mut maxi_maxmin);
@@ -291,15 +294,15 @@ pub fn tips_anticone_blue_rev(tip_name: &str, tips: &HashMap<String, Arc<RwLock<
             drop(new_maxi_pred);
 
             if max_local_maxmin.min >= rest_maxmin.max {
-                //maxi_height_min = max_local_maxmin.min;
+                maxi_height_min = max_local_maxmin.min;
                 break;
             }
         }
 
-        //debug!("tips_anticone(): tip={} rest_height_max={} rest={:?} maxi_height_min={} max={:?} size_of_anticone={}", tip_name, rest_maxmin.max,
-        //         sorted_keys_by_height(&new_rest_pred, true).iter().map(|&(ref n,_)|{n}).collect::<Vec<_>>(),
-        //         maxi_height_min, sorted_keys_by_height(&maxi_pred_set, true).iter().map(|&(ref n,_)|{n}).collect::<Vec<_>>(),
-        //         anticone.len());
+        debug!("tips_anticone_blue_rev(): tip={} rest_height_max={} rest={:?} maxi_height_min={} max={:?} size_of_anticone={}", tip_name, rest_maxmin.max,
+                 sorted_keys_by_height(&new_rest_pred, true).iter().map(|&(ref n,_)|{n}).collect::<Vec<_>>(),
+                 maxi_height_min, sorted_keys_by_height(&maxi_pred_set, true).iter().map(|&(ref n,_)|{n}).collect::<Vec<_>>(),
+                 anticone.len());
         let rest_keys = new_rest_pred.iter().map(|(k,_)|{k.clone()}).collect::<Vec<String>>();
         for name in &rest_keys {
             if maxi_pred_set.get(name).is_some() {
@@ -319,9 +322,9 @@ pub fn tips_anticone_blue_rev(tip_name: &str, tips: &HashMap<String, Arc<RwLock<
         }
 
         rest_pred_set = new_rest_pred;
-        //debug!("tips_anticone(): tip={} size_of_anticone={} rest_pred_set={}", tip_name, anticone.len(), rest_pred_set.len());
+        debug!("tips_anticone_blue_rev(): tip={} size_of_anticone_blue={} rest_pred_set={}", tip_name, anticone.len(), rest_pred_set.len());
     }
-    //debug!("tips_anticone(): tip={} final result: size_of_anticone={}", tip_name, anticone.len());
+    debug!("tips_anticone_blue_rev(): tip={} final result: size_of_anticone_blue={}", tip_name, anticone.len());
 
     return (anticone_blue_count,anticone);
 }

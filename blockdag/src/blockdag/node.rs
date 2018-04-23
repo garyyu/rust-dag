@@ -106,9 +106,10 @@ pub fn node_add_block(name_of_new_block: &str, references: &Vec<&str>, node: &mu
 
             // classmates update
             let classmate = classmates.entry(block.height).or_insert(vec![name_of_new_block.clone().into()]);
-            if classmate.len() > 1 {
+            if classmate.len() > 1 || classmate[0] != name_of_new_block  {
                 classmate.push(name_of_new_block.clone().into());
             }
+            //debug!("node_add_block(): new block={}. classmates update for height {}: {:?}", name_of_new_block, block.height, classmate);
             //todo: limit the classmates size, only keep latest heights.
 
             node.size_of_dag += 1;
