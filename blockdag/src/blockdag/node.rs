@@ -31,6 +31,7 @@ pub struct Node{
     pub dag: HashMap<String, Arc<RwLock<Block>>>,
     pub tips: HashMap<String, Arc<RwLock<Block>>>,
     pub old_tips: HashMap<String, Arc<RwLock<Block>>>,
+    pub classmates: HashMap<u64, Vec<String>>,
     pub hourglass: Vec<(u64,u64)>,
 }
 
@@ -44,6 +45,7 @@ impl Node {
             dag: HashMap::new(),
             tips: HashMap::new(),
             old_tips: HashMap::new(),
+            classmates: HashMap::new(),
             hourglass: Vec::new(),
         }));
 
@@ -90,6 +92,7 @@ pub fn node_add_block(name_of_new_block: &str, references: &Vec<&str>, node: &mu
     // add block
     {
         let dag = &mut node.dag;
+        let classmates= &mut node.classmates;
 
         dag_add_block(name_of_new_block, references, dag);
 
@@ -100,6 +103,14 @@ pub fn node_add_block(name_of_new_block: &str, references: &Vec<&str>, node: &mu
             if block.height > node.height {
                 node.height = block.height;
             }
+
+            // classmates update
+            let classmate = classmates.entry(block.height).or_insert(vec![name_of_new_block.clone().into()]);
+            if classmate.len() > 1 {
+                classmate.push(name_of_new_block.clone().into());
+            }
+            //todo: limit the classmates size, only keep latest heights.
+
             node.size_of_dag += 1;
         }
     }

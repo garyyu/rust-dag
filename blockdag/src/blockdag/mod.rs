@@ -30,8 +30,8 @@ pub use self::block::{Block,MaxMin,append_maps,remove_past_future,sorted_keys_by
 pub use self::node::{Node,node_add_block,update_tips};
 pub use self::dagsim::{dag_add_block,dag_print};
 pub use self::cardinality::{sizeof_pastset,step_one_past};
-pub use self::anticone::{tips_anticone,tips_anticone_blue};
-pub use self::hourglass::{get_nearest_hourglass};
+pub use self::anticone::{tips_anticone,tips_anticone_blue,anticone_blue};
+//pub use self::hourglass::{get_nearest_hourglass};
 pub use self::calcblue::{calc_blue};
 
 

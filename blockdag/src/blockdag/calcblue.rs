@@ -15,10 +15,10 @@
 // along with the rust-dag library. If not, see <http://www.gnu.org/licenses/>.
 
 use std::collections::HashMap;
-use std::collections::hash_map::Entry;
+//use std::collections::hash_map::Entry;
 use std::sync::{Arc,RwLock};
 
-use blockdag::{Block,Node,MaxMin,append_maps,tips_anticone,tips_anticone_blue};
+use blockdag::{Block,Node,tips_anticone_blue,anticone_blue};
 
 /// Function providing blue block calculation.
 ///
@@ -53,7 +53,7 @@ pub fn calc_blue(block_name: &str, node: &mut Node, k: i32){
     // step 2
     let mut tip_max_name = String::new();
     let mut max_past_blue: u64 = 0;
-    for (name, value) in tips {
+    for (_name, value) in tips {
 
         let tip = &value.read().unwrap();
         if tip.size_of_past_blue > max_past_blue {
@@ -108,7 +108,7 @@ pub fn calc_blue(block_name: &str, node: &mut Node, k: i32){
             {
                 let old_tips = &node.old_tips;
                 //let block_r = dag.get(block_name).unwrap().read().unwrap();
-                let (blues, blue_anticone) = tips_anticone_blue(name, old_tips, k);
+                let (blues, blue_anticone) = anticone_blue(name, node, old_tips, k);
                 //drop(block_r);
 
                 if blues >= 0 && blues <= k {
@@ -156,9 +156,9 @@ pub fn calc_blue(block_name: &str, node: &mut Node, k: i32){
 
 fn check_blue(blue_anticone: &HashMap<String, Arc<RwLock<Block>>>, k: i32) {
 
-    let mut used: HashMap<String,bool> = HashMap::new();    // to avoid wrong multiple processing
+//    let mut used: HashMap<String,bool> = HashMap::new();    // to avoid wrong multiple processing
 
-    for (key, value) in blue_anticone {
+    for (_key, value) in blue_anticone {
 
         //debug!("check_blue(): try to write_lock {}", key);
         let mut block_w = value.write().unwrap();
@@ -183,29 +183,29 @@ fn check_blue(blue_anticone: &HashMap<String, Arc<RwLock<Block>>>, k: i32) {
     }
 }
 
-/// Function update all successors (recursively) of this block, if it's blue, size_of_past_blue minus 1.
-///
-/// todo: this iteration could be terrible in performance!
-///
-fn dec_successors_past_blue(block: &Block, used: &mut HashMap<String,bool>){
-
-    for (key, value) in &block.next {
-
-        if used.get(key).is_some() {
-            continue;
-        }else{
-            used.insert(key.clone(), true);
-        }
-
-        //debug!("dec_successors_anticone_blue(): try to write_lock {}", key);
-        {
-            let mut next = value.write().unwrap();
-            if next.is_blue {
-                next.size_of_past_blue -= 1;
-            }
-        }   // scope to limit the lifetime of 'write()' lock.
-
-        let next = &value.read().unwrap();
-        dec_successors_past_blue(next, used);
-    }
-}
+// Function update all successors (recursively) of this block, if it's blue, size_of_past_blue minus 1.
+//
+// todo: this iteration could be terrible in performance!
+//
+//fn dec_successors_past_blue(block: &Block, used: &mut HashMap<String,bool>){
+//
+//    for (key, value) in &block.next {
+//
+//        if used.get(key).is_some() {
+//            continue;
+//        }else{
+//            used.insert(key.clone(), true);
+//        }
+//
+//        //debug!("dec_successors_anticone_blue(): try to write_lock {}", key);
+//        {
+//            let mut next = value.write().unwrap();
+//            if next.is_blue {
+//                next.size_of_past_blue -= 1;
+//            }
+//        }   // scope to limit the lifetime of 'write()' lock.
+//
+//        let next = &value.read().unwrap();
+//        dec_successors_past_blue(next, used);
+//    }
+//}

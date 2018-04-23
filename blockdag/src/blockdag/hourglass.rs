@@ -14,38 +14,38 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with the rust-dag library. If not, see <http://www.gnu.org/licenses/>.
 
-use std::collections::HashMap;
-use std::collections::hash_map::Entry;
-use std::sync::{Arc,RwLock};
-
-use blockdag::{Block,Node,MaxMin,append_maps};
-
-/// Function providing blue hourglass blocks calculation.
-///
-///     input 'block': add a new blue block
-///
-pub fn blue_hourglass_update(block: &Block, node: &mut Node){
-
-//    let dag = &node.dag;
-//    let hourglass = &node.hourglass;
-}
-
-/// Function looking for nearest hourglass pair.
-///
-/// For example: Vec![ (2,4), (4,5), (7,8), (9,12), (15,19), (20,21)   ]
-///
-pub fn get_nearest_hourglass(height: u64, hourglass: &Vec<(u64,u64)>) -> (u64,u64){
-
-    let mut nearest:(u64,u64) = (0,0);
-
-    //todo: not efficient to use sequential loop for searching, to be improved.
-    for &(low,high) in hourglass {
-        if height>=high {
-           break;
-        }
-
-        nearest = (low,high);
-    }
-
-    return nearest;
-}
+//use std::collections::HashMap;
+//use std::collections::hash_map::Entry;
+//use std::sync::{Arc,RwLock};
+//
+//use blockdag::{Block,Node,MaxMin,append_maps};
+//
+//// Function providing blue hourglass blocks calculation.
+////
+////     input 'block': add a new blue block
+////
+//pub fn blue_hourglass_update(block: &Block, node: &mut Node){
+//
+////    let dag = &node.dag;
+////    let hourglass = &node.hourglass;
+//}
+//
+//// Function looking for nearest hourglass pair.
+////
+//// For example: Vec![ (2,4), (4,5), (7,8), (9,12), (15,19), (20,21)   ]
+////
+//pub fn get_nearest_hourglass(height: u64, hourglass: &Vec<(u64,u64)>) -> (u64,u64){
+//
+//    let mut nearest:(u64,u64) = (0,0);
+//
+//    //todo: not efficient to use sequential loop for searching, to be improved.
+//    for &(low,high) in hourglass {
+//        if height>=high {
+//           break;
+//        }
+//
+//        nearest = (low,high);
+//    }
+//
+//    return nearest;
+//}
