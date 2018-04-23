@@ -20,7 +20,7 @@ use std::sync::{Arc,RwLock};
 use std::fmt;
 
 use blockdag::Block;
-use blockdag::{dag_add_block,sorted_keys_by_height};
+use blockdag::{dag_add_block,sorted_keys_by_height,calc_blue};
 
 /// Structure providing fast access to node data.
 ///
@@ -108,7 +108,7 @@ pub fn node_add_block(name_of_new_block: &str, references: &Vec<&str>, node: &mu
     }
 
     // calculate blue
-
+    calc_blue(name_of_new_block, node, 3);
 }
 
 pub fn update_tips(name_of_new_block: &str, node: &mut Node){
