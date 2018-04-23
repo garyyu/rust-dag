@@ -154,6 +154,8 @@ mod tests {
     #[test]
     fn test_add_block() {
 
+        let blocks_generating:i32 = 1000;
+
         let max_classmate_blocks = 5;
         let max_prev_blocks = 5;
 
@@ -179,7 +181,9 @@ mod tests {
 
         let mut blocks_generated = 0;
 
-        for _height in 2..100 {
+        let mut _height:i32 = 1;
+        while blocks_generated < blocks_generating {
+            _height += 1;
             let classmate_blocks = rand::thread_rng().gen_range(1, max_classmate_blocks+1);
 //            let back_steps = rand::thread_rng().gen_range(1, max_back_steps+1);
             //println!("height={} classmate_blocks={}", height, classmate_blocks);
@@ -254,9 +258,10 @@ mod tests {
         let d = start.to(end);
         let total_time_used = d.num_milliseconds() as f64;
 
+        dag_print(&node_w.dag);
+
         println!("node=\"{}\",height={},size_of_dag={}", node_w.name, node_w.height, node_w.size_of_dag);
         println!("total time used: {} (ms)", total_time_used);
-        dag_print(&node_w.dag);
 
         assert_eq!(2 + 2, 4);
     }
