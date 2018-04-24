@@ -62,7 +62,7 @@ pub fn calc_blue(block_name: &str, node: &mut Node, k: i32){
 
         debug!("calc_blue(): step 3. block {}. new block is the max past blue", block_name);
 
-        // step 3.1, clear all others tip's blue flag
+        // step 4. clear all others tip's blue flag
         for (_key, value) in tips {
 
             let block = Arc::clone(value);
@@ -73,14 +73,15 @@ pub fn calc_blue(block_name: &str, node: &mut Node, k: i32){
             }
         }
 
-        // step 4
+        // step 5
         for &(ref name,_,_) in &score_stpq {
 
+            // step 6
             let (blues, blue_anticone) = tips_anticone_blue(name, tips, k);
             if blues < 0 || blues > k {
                 debug!("calc_blue(): block {}. tip {} size_of_anticone_blue={} not blue.", block_name, name, blues);
             }else {
-                // step 4.1
+                // step 7
                 {
                     let mut block_w = dag.get(name).unwrap().write().unwrap();
                     block_w.is_blue = true;
@@ -89,13 +90,13 @@ pub fn calc_blue(block_name: &str, node: &mut Node, k: i32){
                     debug!("calc_blue(): step 4.1. block {}. add {} to the blue. size_of_anticone_blue={}", block_name, name, blues);
                 }   // scope to limit the lifetime of 'write()' lock.
 
-                // step 4.2
+                // step 8
                 check_blue(&blue_anticone, k);
             }
 
         }   // scope to limit the lifetime of blue_anticone.
 
-        // step 5
+        // step 9
         let block_r = dag.get(block_name).unwrap().read().unwrap();
         let prev_keys = get_ltpq(&block_r.prev);
         drop(block_r);  // must be released immediately, otherwise the following loop could enter deadlock.
@@ -106,14 +107,14 @@ pub fn calc_blue(block_name: &str, node: &mut Node, k: i32){
                 continue;
             }   // if expression has an implicit scope, so the 'read()' lock will be released immediately after if {}.
 
-            // step 6
             debug!("calc_blue(): step 6. block {}. come to block {}", block_name, name);
             {
+                // step 10
                 let (blues, blue_anticone) = anticone_blue(name, node, tips, k);
 
                 if blues >= 0 && blues <= k {
 
-                    // step 7
+                    // step 11
                     debug!("calc_blue(): step 7. block {}. query block {}: size_of_anticone_blue={}. try to write_lock {}", block_name, name, blues, name);
                     {
                         let mut pred = dag.get(name).unwrap().write().unwrap();
@@ -123,7 +124,7 @@ pub fn calc_blue(block_name: &str, node: &mut Node, k: i32){
 
                     }   // scope to limit the lifetime of 'write()' lock.
 
-                    // step 8
+                    // step 12
                     check_blue(&blue_anticone, k);
                 }
             }   // scope to limit the lifetime of blue_anticone.
@@ -144,21 +145,20 @@ pub fn calc_blue(block_name: &str, node: &mut Node, k: i32){
 
         debug!("calc_blue(): block {}. new block is not the max past blue", block_name);
 
-        // step 11
+        // step 16
         let (blues,blue_anticone) = tips_anticone_blue(block_name, tips, k);
         debug!("calc_blue(): step 11. block {}. size_of_anticone_blue={}", block_name, blues);
         if blues>=0 && blues<=k {
 
             let mut block_w = dag.get(block_name).unwrap().write().unwrap();
 
-            // step 12
-            //let pred = &Arc::clone(value).write().unwrap();
+            // step 17
             block_w.is_blue = true;
             block_w.size_of_anticone_blue = blues;
             //println!("calc_blue(): block {}. add {} to the blue. size_of_anticone_blue={}", block_name, block_w.name, blues);
             drop(block_w);
 
-            // step 13
+            // step 18
             check_blue(&blue_anticone, k);
         }
     }

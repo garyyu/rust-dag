@@ -6,4 +6,5 @@ members = [
 ]
 
 [profile.test]
+opt-level=3
 
