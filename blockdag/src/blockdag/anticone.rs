@@ -114,9 +114,17 @@ pub fn anticone_blue(any_name: &str, node: &Node, tips: &HashMap<String, Arc<RwL
         return tips_anticone_blue(any_name, tips, k);
     }
 
-    // firstly, we have to create a virtual tips, a nice way is to find the block's tips snapshot when it's added to the dag
+    // firstly, we have to create a virtual tips, a nice way is to find the block's tips snapshot when it's added to the dag, plus the classmates blocks.
     let dag = &node.dag;
-    let virtual_tips = dag.get(any_name).unwrap().read().unwrap().tips_snapshot.clone();
+    let mut virtual_tips = dag.get(any_name).unwrap().read().unwrap().tips_snapshot.clone();
+    let height = dag.get(any_name).unwrap().read().unwrap().height;
+    {
+        let classmates = node.classmates.get(&height).unwrap();
+        for classmate_name in classmates {
+            let tip = Arc::clone(dag.get(classmate_name).unwrap());
+            virtual_tips.entry(classmate_name.clone()).or_insert(tip);
+        }
+    }
     debug!("anticone_blue(): k={}. virtual tips={:?}", k, sorted_keys_by_height(&virtual_tips, false).iter().map(|&(ref n,_)|{n}).collect::<Vec<_>>());
 
     // left half

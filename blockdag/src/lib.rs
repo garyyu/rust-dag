@@ -40,6 +40,8 @@ mod tests {
 
         let k: i32 = 3;
 
+        let _ = env_logger::try_init();
+
         let node = Node::init("fig3");
 
         let mut node_w = node.write().unwrap();
@@ -58,6 +60,7 @@ mod tests {
         node_add_block("J", &vec!["F","H"], &mut node_w, k, true);
         node_add_block("K", &vec!["B","H","I"], &mut node_w, k, true);
         node_add_block("L", &vec!["D","I"], &mut node_w, k, true);
+        node_add_block("N", &vec!["L","K"], &mut node_w, k, true);
         node_add_block("M", &vec!["F","K"], &mut node_w, k, true);
 
         println!("{}", &node_w);
@@ -71,6 +74,8 @@ mod tests {
     fn test_fig4() {
 
         let k: i32 = 3;
+
+        let _ = env_logger::try_init();
 
         let node = Node::init("fig4");
 
@@ -269,7 +274,7 @@ mod tests {
     #[test]
     fn test_fig_x1() {
 
-        let k: i32 = 5;
+        let k: i32 = 0;
 
         let _ = env_logger::try_init();
 
@@ -284,20 +289,20 @@ mod tests {
         node_add_block("D", &vec!["Genesis"], &mut node_w, k, true);
         node_add_block("E", &vec!["Genesis"], &mut node_w, k, true);
 
-        node_add_block("1", &vec!["B","C","D","E"], &mut node_w, k, true);
-        node_add_block("2", &vec!["B","E"], &mut node_w, k, true);
-        node_add_block("3", &vec!["B","C","D","E"], &mut node_w, k, true);
-        node_add_block("4", &vec!["E"], &mut node_w, k, true);
+        node_add_block("01", &vec!["B","C","D","E"], &mut node_w, k, true);
+        node_add_block("02", &vec!["B","E"], &mut node_w, k, true);
+        node_add_block("03", &vec!["B","C","D","E"], &mut node_w, k, true);
+        node_add_block("04", &vec!["E"], &mut node_w, k, true);
 
-        node_add_block("5", &vec!["1","4"], &mut node_w, k, true);
-        node_add_block("6", &vec!["1","3","4"], &mut node_w, k, true);
-        node_add_block("7", &vec!["1","2"], &mut node_w, k, true);
+        node_add_block("05", &vec!["01","04"], &mut node_w, k, true);
+        node_add_block("06", &vec!["01","03","04"], &mut node_w, k, true);
+        node_add_block("07", &vec!["01","02"], &mut node_w, k, true);
 
-        node_add_block("8", &vec!["2","3","5"], &mut node_w, k, true);
-        node_add_block("9", &vec!["5","6","7"], &mut node_w, k, true);
+        node_add_block("08", &vec!["02","03","05"], &mut node_w, k, true);
+        node_add_block("09", &vec!["05","06","07"], &mut node_w, k, true);
 
-        node_add_block("10", &vec!["8","9"], &mut node_w, k, true);
-        node_add_block("11", &vec!["8","9"], &mut node_w, k, true);
+        node_add_block("10", &vec!["08","09"], &mut node_w, k, true);
+        node_add_block("11", &vec!["08","09"], &mut node_w, k, true);
 
         node_add_block("12", &vec!["11"], &mut node_w, k, true);
         node_add_block("13", &vec!["10","11"], &mut node_w, k, true);
@@ -342,6 +347,81 @@ mod tests {
         node_add_block("43", &vec!["28","29","33","41"], &mut node_w, k, true);
         node_add_block("44", &vec!["29","32"], &mut node_w, k, true);
         node_add_block("45", &vec!["27","29","36","38","40"], &mut node_w, k, true);
+
+        println!("{}", &node_w);
+
+        dag_print(&node_w.dag);
+
+        assert_eq!(2 + 2, 4);
+    }
+
+
+    #[test]
+    fn test_fig_x2() {
+
+        let k: i32 = 0;
+
+        let _ = env_logger::try_init();
+
+        let node = Node::init("figX2");
+
+        let mut node_w = node.write().unwrap();
+
+        node_add_block("Genesis", &Vec::new(), &mut node_w, k, true);
+
+        node_add_block("01", &vec!["Genesis"], &mut node_w, k, true);
+        node_add_block("02", &vec!["Genesis"], &mut node_w, k, true);
+        node_add_block("03", &vec!["Genesis"], &mut node_w, k, true);
+        node_add_block("04", &vec!["Genesis"], &mut node_w, k, true);
+        node_add_block("05", &vec!["Genesis"], &mut node_w, k, true);
+
+        node_add_block("06", &vec!["01","02","03","04","05"], &mut node_w, k, true);
+        node_add_block("07", &vec!["01","02","03","04","05"], &mut node_w, k, true);
+        node_add_block("08", &vec!["01","02","03","04","05"], &mut node_w, k, true);
+        node_add_block("09", &vec!["01","02","03","04","05"], &mut node_w, k, true);
+        node_add_block("10", &vec!["01","02","03","04","05"], &mut node_w, k, true);
+
+        node_add_block("11", &vec!["06","07","08","09","10"], &mut node_w, k, true);
+        node_add_block("12", &vec!["06","07","08","09","10"], &mut node_w, k, true);
+        node_add_block("13", &vec!["06","07","08","09","10"], &mut node_w, k, true);
+        node_add_block("14", &vec!["06","07","08","09","10"], &mut node_w, k, true);
+        node_add_block("15", &vec!["06","07","08","09","10"], &mut node_w, k, true);
+
+        node_add_block("16", &vec!["11","12","13","14","15"], &mut node_w, k, true);
+        node_add_block("17", &vec!["11","12","13","14","15"], &mut node_w, k, true);
+        node_add_block("18", &vec!["11","12","13","14","15"], &mut node_w, k, true);
+        node_add_block("19", &vec!["11","12","13","14","15"], &mut node_w, k, true);
+        node_add_block("20", &vec!["11","12","13","14","15"], &mut node_w, k, true);
+
+        node_add_block("21", &vec!["16","17","18","19","20"], &mut node_w, k, true);
+        node_add_block("22", &vec!["16","17","18","19","20"], &mut node_w, k, true);
+        node_add_block("23", &vec!["16","17","18","19","20"], &mut node_w, k, true);
+        node_add_block("24", &vec!["16","17","18","19","20"], &mut node_w, k, true);
+        node_add_block("25", &vec!["16","17","18","19","20"], &mut node_w, k, true);
+
+        node_add_block("26", &vec!["21","22","23","24","25"], &mut node_w, k, true);
+        node_add_block("27", &vec!["21","22","23","24","25"], &mut node_w, k, true);
+        node_add_block("28", &vec!["21","22","23","24","25"], &mut node_w, k, true);
+        node_add_block("29", &vec!["21","22","23","24","25"], &mut node_w, k, true);
+        node_add_block("30", &vec!["21","22","23","24","25"], &mut node_w, k, true);
+
+        node_add_block("31", &vec!["26","27","28","29","30"], &mut node_w, k, true);
+        node_add_block("32", &vec!["26","27","28","29","30"], &mut node_w, k, true);
+        node_add_block("33", &vec!["26","27","28","29","30"], &mut node_w, k, true);
+        node_add_block("34", &vec!["26","27","28","29","30"], &mut node_w, k, true);
+        node_add_block("35", &vec!["26","27","28","29","30"], &mut node_w, k, true);
+
+        node_add_block("36", &vec!["31","32","33","34","35"], &mut node_w, k, true);
+        node_add_block("37", &vec!["31","32","33","34","35"], &mut node_w, k, true);
+        node_add_block("38", &vec!["31","32","33","34","35"], &mut node_w, k, true);
+        node_add_block("39", &vec!["31","32","33","34","35"], &mut node_w, k, true);
+        node_add_block("40", &vec!["31","32","33","34","35"], &mut node_w, k, true);
+
+        node_add_block("41", &vec!["36","37","38","39","40"], &mut node_w, k, true);
+        node_add_block("42", &vec!["36","37","38","39","40"], &mut node_w, k, true);
+        node_add_block("43", &vec!["36","37","38","39","40"], &mut node_w, k, true);
+        node_add_block("44", &vec!["36","37","38","39","40"], &mut node_w, k, true);
+        node_add_block("45", &vec!["36","37","38","39","40"], &mut node_w, k, true);
 
         println!("{}", &node_w);
 

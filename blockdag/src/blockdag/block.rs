@@ -44,7 +44,11 @@ impl fmt::Display for Block {
 
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
 
-        let mut formated_info = format!("name={},height={},size_of_past_set={},size_of_past_blue={},blue={},prev={{", self.name, self.height, self.size_of_past_set, self.size_of_past_blue, self.is_blue);
+        let mut formated_info = if self.is_blue {
+            format!("name={},height={},size_of_past_set={},size_of_past_blue={},blue=1,anticone_blue={},prev={{", self.name, self.height, self.size_of_past_set, self.size_of_past_blue, self.size_of_anticone_blue)
+        }else{
+            format!("name={},height={},size_of_past_set={},size_of_past_blue={},blue=0,prev={{", self.name, self.height, self.size_of_past_set, self.size_of_past_blue)
+        };
 
         for (key, _value) in &self.prev {
 
@@ -144,6 +148,29 @@ pub fn sorted_keys_by_height(source: &HashMap<String,Arc<RwLock<Block>>>, revers
             }
         });
     }
+    return keys_vec;
+}
+
+/// lexicographical topological priority queue.
+///
+pub fn get_ltpq(source: &HashMap<String,Arc<RwLock<Block>>>) -> Vec<(String, u64)>{
+
+    let mut keys_vec: Vec<(String, u64)> = Vec::new();
+
+    for (_key, value) in source {
+        let block = Arc::clone(value);
+        let block = block.read().unwrap();
+
+        keys_vec.push((String::from(block.name.clone()), block.size_of_past_set));
+    }
+
+    keys_vec.sort_by(|a, b| {
+        match a.1.cmp(&b.1).reverse() {
+            Ordering::Equal => a.0.cmp(&b.0),
+            other => other,
+        }
+    });
+
     return keys_vec;
 }
 
