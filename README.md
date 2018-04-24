@@ -32,7 +32,9 @@ Run the simulation for the example of generating 1000 random blocks, and execute
 $ cargo test test_add_block -- --nocapture
 ```
 
-To add a new example DAG to see the DAG blue selection behaviour, it's quite easy, just add a piece of codes like this:
+To add a new example DAG to see the DAG blue selection behaviour, it's quite easy. For example, to test a DAG in this figure 'Fig.4', just add a piece of codes like this:
+![Fig.4](https://github.com/garyyu/rust-dag/blob/master/pics/Fig.4.jpg)
+
 ```rust
     #[test]
     fn test_your_example() {
@@ -118,11 +120,9 @@ k=3, blues={Genesis,B,C,D,F,I,J,K,M,O,P,R,} total=12/20
 test tests::test_your_example ... ok
 ```
 
-The following pictures are that 3 example figures: Fig.3, Fig.4 and Fig.X1.
+The following pictures are the other two examples figures: Fig.3 and Fig.X1.
 
 ![Fig.3](https://github.com/garyyu/rust-dag/blob/master/pics/Fig.3.png)
-
-![Fig.4](https://github.com/garyyu/rust-dag/blob/master/pics/Fig.4.jpg)
 
 ![Fig.X1](https://github.com/garyyu/rust-dag/blob/master/pics/Fig.X1.png)
 
