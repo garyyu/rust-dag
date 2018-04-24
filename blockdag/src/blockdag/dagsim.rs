@@ -95,6 +95,7 @@ pub fn dag_print(dag: &HashMap<String, Arc<RwLock<Block>>>){
 
 pub fn dag_blue_print(dag: &HashMap<String, Arc<RwLock<Block>>>) -> String{
 
+    let mut total_blues = 0;
     let sorted_keys = sorted_keys_by_height(dag, false);
 
     let mut formatted_info = String::from("blues={");
@@ -104,9 +105,10 @@ pub fn dag_blue_print(dag: &HashMap<String, Arc<RwLock<Block>>>) -> String{
             let block = block.unwrap().read().unwrap();
             if block.is_blue {
                 formatted_info.push_str(&format!("{},", name));
+                total_blues += 1;
             }
         }
     }
-    formatted_info.push_str("}");
+    formatted_info.push_str(&format!("}} total={}/{}",total_blues,dag.len()));
     return formatted_info;
 }

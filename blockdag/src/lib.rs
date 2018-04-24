@@ -163,7 +163,7 @@ mod tests {
 
         let blocks_generating:i32 = 1000;
 
-        let max_classmate_blocks = 5;
+        let max_classmate_blocks = 3;
         let max_prev_blocks = 5;
 
         let k: i32 = max_classmate_blocks;
@@ -245,7 +245,8 @@ mod tests {
                     references_str.push(reference);
                 }
 
-                node_add_block(&blocks_generated.to_string(), &references_str,&mut node_w, k, false);
+                let block_name = format!("{:04}", blocks_generated);
+                node_add_block(&block_name, &references_str,&mut node_w, k, false);
 
                 //println!("{}", &node_w);
 
@@ -255,8 +256,9 @@ mod tests {
             // update tips once when a batch of blocks generated.
             let mut classmate_name = blocks_generated;
             for _classmate in 1..classmate_blocks+1 {
-                update_tips(&classmate_name.to_string(), &mut node_w);
-                calc_blue(&classmate_name.to_string(), &mut node_w, max_classmate_blocks);
+                let block_name = format!("{:04}", classmate_name);
+                update_tips(&block_name, &mut node_w);
+                calc_blue(&block_name, &mut node_w, max_classmate_blocks);
                 classmate_name -= 1;
             }
         }
@@ -269,6 +271,9 @@ mod tests {
 
         println!("node=\"{}\",height={},size_of_dag={}", node_w.name, node_w.height, node_w.size_of_dag);
         println!("total time used: {} (ms)", total_time_used);
+
+        let blue_selection = dag_blue_print(&node_w.dag);
+        println!("k={}, {}", k, &blue_selection);
 
         assert_eq!(2 + 2, 4);
     }
@@ -434,7 +439,7 @@ mod tests {
 
         let blue_selection = dag_blue_print(&node_w.dag);
         println!("k={}, {}", k, &blue_selection);
-        
+
         assert_eq!(2 + 2, 4);
     }
 }
