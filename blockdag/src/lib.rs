@@ -70,7 +70,7 @@ mod tests {
         let blue_selection = dag_blue_print(&node_w.dag);
         println!("k={}, {}", k, &blue_selection);
 
-        assert_eq!(&blue_selection, "blues={Genesis,B,C,D,F,H,J,K,M,N,}");
+        assert_eq!(&blue_selection, "blues={Genesis,B,C,D,F,H,J,K,M,N,} total=10/13");
     }
 
     #[test]
@@ -84,32 +84,35 @@ mod tests {
 
         let mut node_w = node.write().unwrap();
 
-        node_add_block("Genesis", &Vec::new(), &mut node_w, k, true);
+        macro_rules! dag_add {
+            ( block=$a:expr, references=$b:expr ) => (node_add_block($a, $b, &mut node_w, k, true));
+        }
+        dag_add!(block="Genesis", references=&Vec::new());
 
-        node_add_block("B", &vec!["Genesis"], &mut node_w, k, true);
-        node_add_block("C", &vec!["Genesis"], &mut node_w, k, true);
-        node_add_block("D", &vec!["Genesis"], &mut node_w, k, true);
-        node_add_block("E", &vec!["Genesis"], &mut node_w, k, true);
+        dag_add!(block="B", references=&vec!["Genesis"]);
+        dag_add!(block="C", references=&vec!["Genesis"]);
+        dag_add!(block="D", references=&vec!["Genesis"]);
+        dag_add!(block="E", references=&vec!["Genesis"]);
 
-        node_add_block("F", &vec!["B","C"], &mut node_w, k, true);
-        node_add_block("H", &vec!["E"], &mut node_w, k, true);
-        node_add_block("I", &vec!["C","D"], &mut node_w, k, true);
+        dag_add!(block="F", references=&vec!["B","C"]);
+        dag_add!(block="H", references=&vec!["E"]);
+        dag_add!(block="I", references=&vec!["C","D"]);
 
-        node_add_block("J", &vec!["F","D"], &mut node_w, k, true);
-        node_add_block("K", &vec!["J","I","E"], &mut node_w, k, true);
-        node_add_block("L", &vec!["F"], &mut node_w, k, true);
-        node_add_block("N", &vec!["D","H"], &mut node_w, k, true);
+        dag_add!(block="J", references=&vec!["F","D"]);
+        dag_add!(block="K", references=&vec!["J","I","E"]);
+        dag_add!(block="L", references=&vec!["F"]);
+        dag_add!(block="N", references=&vec!["D","H"]);
 
-        node_add_block("M", &vec!["L","K"], &mut node_w, k, true);
-        node_add_block("O", &vec!["K"], &mut node_w, k, true);
-        node_add_block("P", &vec!["K"], &mut node_w, k, true);
-        node_add_block("Q", &vec!["N"], &mut node_w, k, true);
+        dag_add!(block="M", references=&vec!["L","K"]);
+        dag_add!(block="O", references=&vec!["K"]);
+        dag_add!(block="P", references=&vec!["K"]);
+        dag_add!(block="Q", references=&vec!["N"]);
 
-        node_add_block("R", &vec!["O","P","N"], &mut node_w, k, true);
+        dag_add!(block="R", references=&vec!["O","P","N"]);
 
-        node_add_block("S", &vec!["Q"], &mut node_w, k, true);
-        node_add_block("T", &vec!["S"], &mut node_w, k, true);
-        node_add_block("U", &vec!["T"], &mut node_w, k, true);
+        dag_add!(block="S", references=&vec!["Q"]);
+        dag_add!(block="T", references=&vec!["S"]);
+        dag_add!(block="U", references=&vec!["T"]);
 
         println!("{}", &node_w);
 
@@ -118,7 +121,7 @@ mod tests {
         let blue_selection = dag_blue_print(&node_w.dag);
         println!("k={}, {}", k, &blue_selection);
 
-        assert_eq!(&blue_selection, "blues={Genesis,B,C,D,F,I,J,K,M,O,P,R,}");
+        assert_eq!(&blue_selection, "blues={Genesis,B,C,D,F,I,J,K,M,O,P,R,} total=12/20");
     }
 
     #[test]
@@ -180,11 +183,6 @@ mod tests {
         node_add_block("C", &vec!["Genesis"], &mut node_w, k, true);
         node_add_block("D", &vec!["Genesis"], &mut node_w, k, true);
         node_add_block("E", &vec!["Genesis"], &mut node_w, k, true);
-
-//        let anticone = tips_anticone("B", &node_w.tips, &node_w.dag);
-//        let result = format!("anticone of {} = {:?}", "B",
-//                             sorted_keys_by_height(&anticone, false).iter().map(|&(ref n,_)|{n}).collect::<Vec<_>>());
-//        println!("{}",result);
 
         let mut blocks_generated = 0;
 
