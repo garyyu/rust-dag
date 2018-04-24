@@ -45,7 +45,7 @@ impl fmt::Display for Block {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
 
         let mut formated_info = if self.is_blue {
-            format!("name={},height={},size_of_past_set={},size_of_past_blue={},blue=1,anticone_blue={},prev={{", self.name, self.height, self.size_of_past_set, self.size_of_past_blue, self.size_of_anticone_blue)
+            format!("name={},height={},size_of_past_set={},size_of_past_blue={},blue=1,prev={{", self.name, self.height, self.size_of_past_set, self.size_of_past_blue)
         }else{
             format!("name={},height={},size_of_past_set={},size_of_past_blue={},blue=0,prev={{", self.name, self.height, self.size_of_past_set, self.size_of_past_blue)
         };
