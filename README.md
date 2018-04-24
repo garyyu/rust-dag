@@ -34,11 +34,11 @@ $ cargo test test_add_block -- --nocapture
 
 The following is 3 figures of example Fig.3, Fig.4 and Fig.X1.
 
-![Fig.3](https://github.com/garyyu/rust-dag/pics/Fig.3.png)
+![Fig.3](https://github.com/garyyu/rust-dag/blob/master/pics/Fig.3.png)
 
-![Fig.4](https://github.com/garyyu/rust-dag/pics/Fig.4.jpg)
+![Fig.4](https://github.com/garyyu/rust-dag/blob/master/pics/Fig.4.png)
 
-![Fig.X1](https://github.com/garyyu/rust-dag/pics/Fig.X1.jpg)
+![Fig.X1](https://github.com/garyyu/rust-dag/blob/master/pics/Fig.X1.png)
 
 
 
