@@ -33,7 +33,7 @@ mod tests {
     use self::time::{PreciseTime};
 
     use blockdag::{Node};
-    use blockdag::{node_add_block,dag_print,tips_anticone,sorted_keys_by_height,remove_past_future,update_tips,calc_blue};
+    use blockdag::{node_add_block,dag_print,dag_blue_print,tips_anticone,sorted_keys_by_height,remove_past_future,update_tips,calc_blue};
 
     #[test]
     fn test_fig3() {
@@ -67,7 +67,10 @@ mod tests {
 
         dag_print(&node_w.dag);
 
-        assert_eq!(2 + 2, 4);
+        let blue_selection = dag_blue_print(&node_w.dag);
+        println!("k={}, {}", k, &blue_selection);
+
+        assert_eq!(&blue_selection, "blues={Genesis,B,C,D,F,H,J,K,M,N,}");
     }
 
     #[test]
@@ -112,7 +115,10 @@ mod tests {
 
         dag_print(&node_w.dag);
 
-        assert_eq!(2 + 2, 4);
+        let blue_selection = dag_blue_print(&node_w.dag);
+        println!("k={}, {}", k, &blue_selection);
+
+        assert_eq!(&blue_selection, "blues={Genesis,B,C,D,F,I,J,K,M,O,P,R,}");
     }
 
     #[test]
@@ -144,10 +150,6 @@ mod tests {
         node_add_block("K", &vec!["B","H","I"], &mut node_w, k, true);
         node_add_block("L", &vec!["D","I"], &mut node_w, k, true);
         node_add_block("M", &vec!["F","K"], &mut node_w, k, true);
-//
-//        let max_back_steps = 8;
-//        let max_classmate_blocks = 5;
-//        let max_prev_blocks = 5;
 
         let anticone = tips_anticone("M", &node_w.tips);
         let result = format!("anticone of {} = {:?}", "M", sorted_keys_by_height(&anticone, false));
@@ -352,6 +354,9 @@ mod tests {
 
         dag_print(&node_w.dag);
 
+        let blue_selection = dag_blue_print(&node_w.dag);
+        println!("k={}, {}", k, &blue_selection);
+
         assert_eq!(2 + 2, 4);
     }
 
@@ -427,6 +432,9 @@ mod tests {
 
         dag_print(&node_w.dag);
 
+        let blue_selection = dag_blue_print(&node_w.dag);
+        println!("k={}, {}", k, &blue_selection);
+        
         assert_eq!(2 + 2, 4);
     }
 }

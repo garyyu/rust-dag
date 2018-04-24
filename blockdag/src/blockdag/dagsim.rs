@@ -92,3 +92,21 @@ pub fn dag_print(dag: &HashMap<String, Arc<RwLock<Block>>>){
     }
     println!("}}");
 }
+
+pub fn dag_blue_print(dag: &HashMap<String, Arc<RwLock<Block>>>) -> String{
+
+    let sorted_keys = sorted_keys_by_height(dag, false);
+
+    let mut formatted_info = String::from("blues={");
+    for &(ref name,_) in &sorted_keys {
+        let block = dag.get(name);
+        if block.is_some() {
+            let block = block.unwrap().read().unwrap();
+            if block.is_blue {
+                formatted_info.push_str(&format!("{},", name));
+            }
+        }
+    }
+    formatted_info.push_str("}");
+    return formatted_info;
+}
