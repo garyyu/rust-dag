@@ -1,7 +1,7 @@
 # rust-dag 
 BlockDAG algorithms Rust language simulation.
 
-BlockChain (for example Bitcoin, Etherum, etc.) is just a 'k=0' special subtype of BlockDAG, that's why they have the highly restrictive throughput. DAG is the future!
+BlockChain (for example Bitcoin, Etherum, etc.) is just a 'k=0' special subtype of BlockDAG, that's why they suffer from the highly restrictive throughput. DAG is the future!
 
 ---
 
@@ -125,6 +125,10 @@ The following pictures are the other two examples figures: Fig.3 and Fig.X1.
 ![Fig.3](https://github.com/garyyu/rust-dag/blob/master/pics/Fig.3.png)
 
 ![Fig.X1](https://github.com/garyyu/rust-dag/blob/master/pics/Fig.X1.png)
+
+Please join us the BlockDAG discussion on [https://godag.github.io](https://godag.github.io).
+
+
 
 
 
