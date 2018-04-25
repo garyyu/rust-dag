@@ -92,6 +92,10 @@ pub fn calc_blue(block_name: &str, node: &mut Node, k: i32){
 
                 // step 8
                 check_blue(&blue_anticone, k);
+
+                if k==0{    // shortcut optimization for special case: 'k=0', which save 40% calculation.
+                    return;
+                }
             }
 
         }   // scope to limit the lifetime of blue_anticone.

@@ -256,7 +256,7 @@ mod tests {
             for _classmate in 1..classmate_blocks+1 {
                 let block_name = format!("{:04}", classmate_name);
                 update_tips(&block_name, &mut node_w);
-                calc_blue(&block_name, &mut node_w, max_classmate_blocks);
+                calc_blue(&block_name, &mut node_w, k);
                 classmate_name -= 1;
             }
         }
@@ -434,6 +434,124 @@ mod tests {
         println!("{}", &node_w);
 
         dag_print(&node_w.dag);
+
+        let blue_selection = dag_blue_print(&node_w.dag);
+        println!("k={}, {}", k, &blue_selection);
+
+        assert_eq!(2 + 2, 4);
+    }
+
+    #[test]
+    fn test_nodes_sync() {
+
+        let blocks_generating:i32 = 1000;
+
+        let max_classmate_blocks = 3;
+        let max_prev_blocks = 5;
+
+        let k: i32 = max_classmate_blocks;
+
+        let start = PreciseTime::now();
+
+        let node = Node::init("nodes sync test");
+
+        let mut node_w = node.write().unwrap();
+
+        macro_rules! dag_add {
+            ( block=$a:expr, references=$b:expr ) => (node_add_block($a, $b, &mut node_w, k, true));
+        }
+        dag_add!(block="Genesis", references=&Vec::new());
+
+        dag_add!(block="B", references=&vec!["Genesis"]);
+        dag_add!(block="C", references=&vec!["Genesis"]);
+        dag_add!(block="D", references=&vec!["Genesis"]);
+        dag_add!(block="E", references=&vec!["Genesis"]);
+
+        let mut blocks_generated = 0;
+
+        let mut _height:i32 = 1;
+        while blocks_generated < blocks_generating {
+            _height += 1;
+            let classmate_blocks = rand::thread_rng().gen_range(1, max_classmate_blocks+1);
+//            let back_steps = rand::thread_rng().gen_range(1, max_back_steps+1);
+            //println!("height={} classmate_blocks={}", height, classmate_blocks);
+
+            for _classmate in 1..classmate_blocks+1 {
+
+                let prev_blocks = rand::thread_rng().gen_range(1, max_prev_blocks+1);
+                //println!("height={} classmate={} prev_blocks={}", height, classmate, prev_blocks);
+
+                let mut references = Vec::new();
+
+                // get one block from tips as 1st prev
+                let mut tip_name_selected = String::new();
+                for (key, _) in node_w.tips.iter() {
+                    references.push(key.clone());
+                    tip_name_selected.push_str(key);
+                    break;  // just take one tip only.
+                }
+
+                // randomly select one from the anticone of that tip
+                let mut anticone = tips_anticone(&tip_name_selected, &node_w.tips);
+
+                while references.len() < prev_blocks && anticone.len()>0 {
+
+                    let mut anticone_clone = anticone.clone();
+
+                    for (key, value) in anticone.iter() {
+                        if references.len() >= prev_blocks {
+                            break;
+                        }
+
+                        let block = Arc::clone(value);
+                        let block = block.read().unwrap();
+
+                        references.push(key.clone());
+
+                        // update anticone to remove all the past of this new referenced block.
+                        remove_past_future(&block, &mut anticone_clone);
+                        break;
+                    }
+
+                    anticone = anticone_clone;
+                    //println!("height={} classmate={} classmate_blocks={} prev_blocks={} references={:?} anticone size={}", height, classmate, classmate_blocks, prev_blocks, references, anticone.len());
+                }
+
+                //println!("height={} classmate={} classmate_blocks={} prev_blocks={} references={:?}", height, classmate, classmate_blocks, prev_blocks, references);
+
+                blocks_generated += 1;
+
+                let mut references_str:Vec<&str> = Vec::new();
+                for reference in &references {
+                    references_str.push(reference);
+                }
+
+                let block_name = format!("{:04}", blocks_generated);
+                node_add_block(&block_name, &references_str,&mut node_w, k, false);
+
+                //println!("{}", &node_w);
+
+                //dag_print(&node_w.dag);
+            }
+
+            // update tips once when a batch of blocks generated.
+            let mut classmate_name = blocks_generated;
+            for _classmate in 1..classmate_blocks+1 {
+                let block_name = format!("{:04}", classmate_name);
+                update_tips(&block_name, &mut node_w);
+                calc_blue(&block_name, &mut node_w, k);
+                classmate_name -= 1;
+            }
+        }
+
+        let end = PreciseTime::now();
+        let d = start.to(end);
+        let total_time_used = d.num_milliseconds() as f64;
+
+        dag_print(&node_w.dag);
+
+        println!("node=\"{}\",height={},size_of_dag={}", node_w.name, node_w.height, node_w.size_of_dag);
+        println!("total time used: {} (ms)", total_time_used);
 
         let blue_selection = dag_blue_print(&node_w.dag);
         println!("k={}, {}", k, &blue_selection);
