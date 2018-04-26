@@ -447,9 +447,13 @@ mod tests {
     #[test]
     fn test_nodes_sync() {
 
-        const TOTAL_NODES: i32 = 2;        // how many nodes to simulate. each node is a thread spawn.
-        let blocks_generating:i32 = 10;   // how many blocks mining for this test.
+        let _ = env_logger::try_init();
+
+        const TOTAL_NODES: i32 = 10;        // how many nodes to simulate. each node is a thread spawn.
+        let blocks_generating:i32 = 100;   // how many blocks mining for this test.
         const K: i32 = 3;                    // how many blocks generating in parallel.
+
+        println!("test_nodes_sync(): start. k={}, blocks={}, nodes={}", K, blocks_generating, TOTAL_NODES);
 
         let start = PreciseTime::now();
 
@@ -477,20 +481,52 @@ mod tests {
                 loop {
                     let mining_lock = mining.read().unwrap();
                     if *mining_lock == -1 {
+
+                        info!("thread exited. node=\"{}\",height={},size_of_dag={},size_of_stash={},mining_lock={}. mined_blocks={}",
+                              node_w.name, node_w.height, node_w.size_of_dag, node_stash.len(), mining_lock, node_w.mined_blocks);
+                        drop(mining_lock);
+
+                        if node_w.name == "node0" {
+                            dag_print(&node_w.dag);
+                            let blue_selection = dag_blue_print(&node_w.dag);
+                            info!("k={}, {}", K, &blue_selection);
+                        }
+
                         break;  // ask thread to exit
 
                     }else if *mining_lock == 0 {
                         drop(mining_lock);
 
                         // processing block propagation
+                        let t1 = PreciseTime::now();
+                        info!("node {} write locking for block receiving", node_w.name);
                         let mut arrivals = block_propagation.write().unwrap();
                         handle_block_rx(&mut arrivals, &mut node_w, &mut node_stash, K);
-                        thread::sleep(Duration::from_millis(1));
+                        drop(arrivals);
+                        let t2 = PreciseTime::now();
+                        let td = t1.to(t2);
+                        let time_used = td.num_milliseconds() as f64;
+                        info!("rx time spent:{}ms {}", time_used, &node_w);
+
+                        let random_sleep = rand::thread_rng().gen_range(1, 500);
+                        info!("node {} random sleep: {}ms", node_w.name, random_sleep);
+                        thread::sleep(Duration::from_millis(random_sleep));
+
+                    }else{
+                        drop(mining_lock);
+                    }
+
+                    info!("node {} write locking for mining", node_w.name);
+                    let mining_lock = mining.try_write();
+                    if mining_lock.is_err() {
                         continue;
                     }
 
-                    drop(mining_lock);
-                    let mut mining_lock = mining.write().unwrap();
+                    let mut mining_lock = mining_lock.unwrap();
+                    if *mining_lock <= 0 {
+                        drop(mining_lock);
+                        continue;
+                    }
                     *mining_lock -= 1;
                     drop(mining_lock);
 
@@ -502,29 +538,45 @@ mod tests {
                     let references_str = node_w.tips.iter().map(|(k,_)|{k.clone()}).collect::<Vec<String>>();
                     node_add_block(&block_name, &references_str.iter().map(|s| s.as_ref()).collect(), &mut node_w, K, true);
 
-                    //println!("{}", &node_w);
-
-                    calc_blue(&block_name, &mut node_w, K);
+                    info!("{}", &node_w);
 
                     // propagate this new mined block
+                    let t1 = PreciseTime::now();
+                    info!("node {} write locking for broadcast new block {}", node_w.name, block_name);
                     let mut propagations = block_propagation.write().unwrap();
-                    handle_block_tx(&block_name, &mut propagations, &node_w, TOTAL_NODES);
+                    handle_block_tx(&block_name, &mut propagations, &node_w, TOTAL_NODES-1);
+                    let t2 = PreciseTime::now();
+                    let td = t1.to(t2);
+                    let time_used = td.num_milliseconds() as f64;
+                    info!("node {} done for broadcasting new block {}. time spent: {}ms", node_w.name, block_name, time_used);
+
+                    node_w.mined_blocks += 1;
+
+//                    if node_w.name == "node0" {
+//                        dag_print(&node_w.dag);
+//                    }
                 }
             });
 
             handles.push(handle);
         }
 
+        // wait a while for nodes thread start-up.
+        thread::sleep(Duration::from_secs(1));
+
         loop {
             let mut mining = mining_token_ring.write().unwrap();
-            *mining = K;
+            *mining = 3;
             drop(mining);
-            thread::sleep(Duration::from_millis(500));
+            thread::sleep(Duration::from_millis(100));
 
             {
                 let blocks_generated_r = blocks_generated.read().unwrap();
                 if *blocks_generated_r >= blocks_generating {
                     drop(blocks_generated_r);
+
+                    // wait a while for nodes complete propagation.
+                    thread::sleep(Duration::from_secs(1));
 
                     let mut mining = mining_token_ring.write().unwrap();
                     *mining = -1;   // ask nodes stop and exit.
@@ -539,20 +591,13 @@ mod tests {
         }
 
         let propagation = block_token_ring.read().unwrap();
-        println!("test_nodes_sync(): block propagation hashmap remaining size: {}", propagation.len());
-
+        println!("test_nodes_sync(): done. block propagation hashmap remaining size: {}", propagation.len());
 
         let end = PreciseTime::now();
         let d = start.to(end);
         let total_time_used = d.num_milliseconds() as f64;
 
-        //dag_print(&node_w.dag);
-
-        //println!("node=\"{}\",height={},size_of_dag={}", node_w.name, node_w.height, node_w.size_of_dag);
         println!("total time used: {} (ms)", total_time_used);
-
-        //let blue_selection = dag_blue_print(&node_w.dag);
-        //println!("k={}, {}", k, &blue_selection);
 
         assert_eq!(2 + 2, 4);
     }

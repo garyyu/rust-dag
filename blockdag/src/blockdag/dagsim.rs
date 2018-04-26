@@ -77,20 +77,22 @@ pub fn dag_add_block(name: &str, references: &Vec<&str>, dag: &mut HashMap<Strin
     dag.insert(String::from(name.clone()), this_block);
 }
 
-pub fn dag_print(dag: &HashMap<String, Arc<RwLock<Block>>>){
+pub fn dag_print(dag: &HashMap<String, Arc<RwLock<Block>>>) -> String{
 
     let sorted_keys = sorted_keys_by_height(dag, false);
 
-    println!("dag={{");
+    let mut formatted_info = String::from("dag={\n");
     for (name,_) in sorted_keys {
         let block = dag.get(&name);
         if block.is_some() {
             let block = Arc::clone(block.unwrap());
             let block = block.read().unwrap();
-            println!(" {{name={},block={}}}", name, block);
+            formatted_info.push_str(&format!("{{name={},block={}}}\n", name, block));
         }
     }
-    println!("}}");
+    formatted_info.push_str("}");
+    info!("{}",formatted_info);
+    return formatted_info;
 }
 
 pub fn dag_blue_print(dag: &HashMap<String, Arc<RwLock<Block>>>) -> String{

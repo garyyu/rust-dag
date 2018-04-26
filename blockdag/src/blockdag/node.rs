@@ -32,6 +32,7 @@ pub struct Node{
     pub tips: HashMap<String, Arc<RwLock<Block>>>,
     pub classmates: HashMap<u64, Vec<String>>,
     pub hourglass: Vec<(u64,u64)>,
+    pub mined_blocks: u64,
 }
 
 impl Node {
@@ -45,6 +46,7 @@ impl Node {
             tips: HashMap::new(),
             classmates: HashMap::new(),
             hourglass: Vec::new(),
+            mined_blocks: 0 as u64,
         }));
 
         return node;
@@ -84,20 +86,20 @@ impl fmt::Display for Node {
     }
 }
 
-pub fn handle_block_tx(new_mined_block:&str, propagations: &mut HashMap<String, Arc<RwLock<BlockRaw>>>, node: &Node, total_nodes: i32) {
+pub fn handle_block_tx(new_mined_block_name:&str, propagations: &mut HashMap<String, Arc<RwLock<BlockRaw>>>, node: &Node, total_nodes: i32) {
 
-    let new_mined_block = &node.dag.get(new_mined_block).unwrap().read().unwrap();
+    let new_mined_block = &node.dag.get(new_mined_block_name).unwrap().read().unwrap();
     let prev_names = new_mined_block.prev.iter().map(|(k,_)|{k.clone()}).collect::<Vec<String>>();
 
     let new_block_raw = BlockRaw{
-        name:new_mined_block.clone().to_string(),
+        name:new_mined_block_name.clone().to_string(),
         height: new_mined_block.height,
         size_of_past_set: new_mined_block.size_of_past_set,
         prev: prev_names,
         propagation: total_nodes,
     };
 
-    propagations.insert(new_mined_block.clone().to_string(), Arc::new(RwLock::new(new_block_raw)));
+    propagations.insert(new_mined_block_name.clone().to_string(), Arc::new(RwLock::new(new_block_raw)));
     drop(propagations);
 }
 
@@ -105,15 +107,24 @@ pub fn handle_block_rx(arrivals: &mut HashMap<String, Arc<RwLock<BlockRaw>>>, no
 
     let mut to_be_removed: Vec<String> = Vec::new();
     let stash = node_stash;
-    for (name_of_new_block,value) in &*arrivals {
-        let is_real_new = stash.get(name_of_new_block).is_none();
-        stash.entry(name_of_new_block.clone()).or_insert(Arc::clone(value));
-        if is_real_new {
-            let arrival = &mut value.write().unwrap();
 
-            arrival.propagation -= 1;
-            if arrival.propagation <= 0 {
-                to_be_removed.push(name_of_new_block.clone());
+    {
+        let dag = &node.dag;
+
+        for (name_of_new_block, value) in &*arrivals {
+            if dag.get(name_of_new_block).is_some(){
+                continue; // block already received.
+            }
+
+            let is_real_new = stash.get(name_of_new_block).is_none();
+            stash.entry(name_of_new_block.clone()).or_insert(Arc::clone(value));
+            if is_real_new {
+                let arrival = &mut value.write().unwrap();
+
+                arrival.propagation -= 1;
+                if arrival.propagation <= 0 {
+                    to_be_removed.push(name_of_new_block.clone());
+                }
             }
         }
     }
@@ -123,32 +134,39 @@ pub fn handle_block_rx(arrivals: &mut HashMap<String, Arc<RwLock<BlockRaw>>>, no
     }
 
     // important note: the 'arrivals' must be drop lock as soon as possible by node.
-    drop(arrivals);
+    //drop(*arrivals);  //todo: cannot move out of borrowed content
 
     // after drop lock, start local processing with stash
 
     let mut block_added: Vec<String> = Vec::new();
-    'outer: for (name_of_stash_block,value) in &*stash {
+    loop {
+        'outer: for (name_of_stash_block, value) in &*stash {
+            let stash_block = Arc::clone(value);
+            let stash_block = stash_block.read().unwrap();
 
-        let stash_block = Arc::clone(value);
-        let stash_block = stash_block.read().unwrap();
+            // before adding to dag, make sure all its predecessors are already in dag, otherwise skip it for this time.
+            for prev in &stash_block.prev {
+                let dag = &node.dag;
+                if dag.get(prev).is_none() {
+                    continue 'outer;
+                }
+            }
 
-        // before adding to dag, make sure all its predecessors are already in dag, otherwise skip it for this time.
-        for prev in &stash_block.prev{
-            let dag = &node.dag;
-            if dag.get(prev).is_none(){
-                continue 'outer;
+            let prev_names = stash_block.prev.iter().map(|k| { &k[..] }).collect::<Vec<&str>>();
+            if true == node_add_block(name_of_stash_block, &prev_names, node, k, true) {
+                block_added.push(name_of_stash_block.clone());
             }
         }
 
-        let prev_names = stash_block.prev.iter().map(|k|{&k[..]}).collect::<Vec<&str>>();
-        if true==node_add_block(name_of_stash_block, &prev_names, node, k, true) {
-            block_added.push(name_of_stash_block.clone());
+        for added_name in &block_added {
+            stash.remove(added_name);
         }
-    }
 
-    for added_name in &block_added {
-        stash.remove(added_name);
+        if block_added.len()==0 {
+            break;
+        }
+        // in cast one released stash block could release another stash block, loop check.
+        block_added.truncate(0);
     }
 }
 
