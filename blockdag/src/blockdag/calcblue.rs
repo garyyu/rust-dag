@@ -18,7 +18,7 @@ use std::collections::HashMap;
 use std::sync::{Arc,RwLock};
 use std::cmp::Ordering;
 
-use blockdag::{Block,Node,tips_anticone_blue,anticone_blue,get_ltpq,sorted_keys_by_height,sizeof_pastset};
+use blockdag::{Block,Node,tips_anticone,tips_anticone_blue,anticone_blue,get_ltpq,sorted_keys_by_height,sizeof_pastset};
 
 /// Function providing blue block calculation.
 ///
@@ -97,9 +97,14 @@ pub fn calc_blue(block_name: &str, node: &mut Node, k: i32){
         }   // scope to limit the lifetime of blue_anticone.
 
         // step 9
-        let block_r = dag.get(block_name).unwrap().read().unwrap();
-        let prev_keys = get_ltpq(&block_r.prev);
-        drop(block_r);  // must be released immediately, otherwise the following loop could enter deadlock.
+//        let block_r = dag.get(block_name).unwrap().read().unwrap();
+//        let prev_keys = get_ltpq(&block_r.prev);
+//        drop(block_r);  // must be released immediately, otherwise the following loop could enter deadlock.
+
+        // another algorithm, to check all the anticone(bmax), not only the predecessor(z;G)
+        let anticone_of_new = tips_anticone(block_name, tips);
+        let prev_keys = get_ltpq(&anticone_of_new);
+        drop(anticone_of_new);
 
         for &(ref name,_) in &prev_keys {
 

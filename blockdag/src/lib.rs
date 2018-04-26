@@ -452,7 +452,7 @@ mod tests {
     #[test]
     fn test_fig_x3() {
 
-        let k: i32 = 0;
+        let k: i32 = 3;
 
         let _ = env_logger::try_init();
 

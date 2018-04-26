@@ -22,6 +22,8 @@ use std::sync::{Arc,RwLock};
 use blockdag::{Block,MaxMin,Node};
 use blockdag::{sorted_keys_by_height,step_one_past,append_maps};
 
+const ANTICONE_MAX_ITERATION: i32 = 30;
+
 /// Function providing anti-cone calculations.
 ///
 pub fn tips_anticone(tip_name: &str, tips: &HashMap<String, Arc<RwLock<Block>>>) -> HashMap<String, Arc<RwLock<Block>>>{
@@ -62,7 +64,8 @@ pub fn tips_anticone(tip_name: &str, tips: &HashMap<String, Arc<RwLock<Block>>>)
     let mut rest_maxmin = MaxMin{max:0, min:<u64>::max_value()};
     let mut maxi_maxmin = MaxMin{max:0, min:<u64>::max_value()};
 
-    while rest_pred_set.len() > 0 {
+    let mut iteration_steps = 0;
+    while rest_pred_set.len() > 0 && iteration_steps < ANTICONE_MAX_ITERATION {
 
         let mut new_rest_pred: HashMap<String,Arc<RwLock<Block>>> = HashMap::new();
         let _rest_local_maxmin = step_one_past(&rest_pred_set, &mut new_rest_pred, &mut used_rest, &mut rest_maxmin);
@@ -79,6 +82,7 @@ pub fn tips_anticone(tip_name: &str, tips: &HashMap<String, Arc<RwLock<Block>>>)
                 //maxi_height_max = max_local_maxmin.max;
                 break;
             }
+            iteration_steps += 1;
         }
 
         //println!("tips_anticone(): tip={} rest_height_min={} rest={:?} maxi_height_max={} max={:?} size_of_anticone={}", tip_name, rest_maxmin.min,
@@ -96,8 +100,14 @@ pub fn tips_anticone(tip_name: &str, tips: &HashMap<String, Arc<RwLock<Block>>>)
 
         rest_pred_set = new_rest_pred;
         //println!("tips_anticone(): tip={} size_of_anticone={} rest_pred_set={}", tip_name, anticone.len(), rest_pred_set.len());
+
+        iteration_steps += 1;
     }
     //println!("tips_anticone(): tip={} final result: size_of_anticone={}", tip_name, anticone.len());
+
+    if iteration_steps >= ANTICONE_MAX_ITERATION {
+        warn!("tips_anticone(): tip={}. too many iterations! force to break.", tip_name);
+    }
 
     return anticone;
 }
