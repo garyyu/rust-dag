@@ -579,7 +579,11 @@ mod tests {
         let blue_selection = dag_blue_print(&node_w.dag);
         println!("k={}, {}", k, &blue_selection);
 
-        assert_eq!(2 + 2, 4);
+        if k==0 {
+            assert_eq!(&blue_selection, "blues={Genesis,0001,0002,0003,0007,0008,0009,0013,0014,0015,0031,0032,0033,0037,0038,0039,0043,0044,0045,0052,0054,0058,0059,0060,0076,0077,0078,0091,0093,0094,0095,0096,0097,0098,0099,} total=35/103");
+        }else {
+            assert_eq!(2 + 2, 4);
+        }
     }
 
     #[test]
