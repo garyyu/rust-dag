@@ -19,7 +19,7 @@ use std::collections::HashMap;
 use std::sync::{Arc,RwLock};
 use std::fmt;
 
-use blockdag::Block;
+use blockdag::{Block,BlockRaw};
 use blockdag::{dag_add_block,sorted_keys_by_height,calc_blue};
 
 /// Structure providing fast access to node data.
@@ -84,12 +84,83 @@ impl fmt::Display for Node {
     }
 }
 
+pub fn handle_block_tx(new_mined_block:&str, propagations: &mut HashMap<String, Arc<RwLock<BlockRaw>>>, node: &Node, total_nodes: i32) {
 
-pub fn node_add_block(name_of_new_block: &str, references: &Vec<&str>, node: &mut Node, k: i32, do_update_tips: bool) {
+    let new_mined_block = &node.dag.get(new_mined_block).unwrap().read().unwrap();
+    let prev_names = new_mined_block.prev.iter().map(|(k,_)|{k.clone()}).collect::<Vec<String>>();
+
+    let new_block_raw = BlockRaw{
+        name:new_mined_block.clone().to_string(),
+        height: new_mined_block.height,
+        size_of_past_set: new_mined_block.size_of_past_set,
+        prev: prev_names,
+        propagation: total_nodes,
+    };
+
+    propagations.insert(new_mined_block.clone().to_string(), Arc::new(RwLock::new(new_block_raw)));
+    drop(propagations);
+}
+
+pub fn handle_block_rx(arrivals: &mut HashMap<String, Arc<RwLock<BlockRaw>>>, node: &mut Node, node_stash: &mut HashMap<String, Arc<RwLock<BlockRaw>>>, k: i32){
+
+    let mut to_be_removed: Vec<String> = Vec::new();
+    let stash = node_stash;
+    for (name_of_new_block,value) in &*arrivals {
+        let is_real_new = stash.get(name_of_new_block).is_none();
+        stash.entry(name_of_new_block.clone()).or_insert(Arc::clone(value));
+        if is_real_new {
+            let arrival = &mut value.write().unwrap();
+
+            arrival.propagation -= 1;
+            if arrival.propagation <= 0 {
+                to_be_removed.push(name_of_new_block.clone());
+            }
+        }
+    }
+
+    for name in &to_be_removed {
+        arrivals.remove(name);
+    }
+
+    // important note: the 'arrivals' must be drop lock as soon as possible by node.
+    drop(arrivals);
+
+    // after drop lock, start local processing with stash
+
+    let mut block_added: Vec<String> = Vec::new();
+    'outer: for (name_of_stash_block,value) in &*stash {
+
+        let stash_block = Arc::clone(value);
+        let stash_block = stash_block.read().unwrap();
+
+        // before adding to dag, make sure all its predecessors are already in dag, otherwise skip it for this time.
+        for prev in &stash_block.prev{
+            let dag = &node.dag;
+            if dag.get(prev).is_none(){
+                continue 'outer;
+            }
+        }
+
+        let prev_names = stash_block.prev.iter().map(|k|{&k[..]}).collect::<Vec<&str>>();
+        if true==node_add_block(name_of_stash_block, &prev_names, node, k, true) {
+            block_added.push(name_of_stash_block.clone());
+        }
+    }
+
+    for added_name in &block_added {
+        stash.remove(added_name);
+    }
+}
+
+pub fn node_add_block(name_of_new_block: &str, references: &Vec<&str>, node: &mut Node, k: i32, do_update_tips: bool) -> bool {
 
     // add block
     {
         let dag = &mut node.dag;
+        if dag.get(name_of_new_block).is_some(){
+            return false; // block already received.
+        }
+
         let classmates= &mut node.classmates;
 
         dag_add_block(name_of_new_block, references, dag);
@@ -113,7 +184,7 @@ pub fn node_add_block(name_of_new_block: &str, references: &Vec<&str>, node: &mu
             node.size_of_dag += 1;
         }else{
             warn!("node_add_block(): block not found in dag. dag_add_block failed?");
-            return;
+            return false;
         }
     }
 
@@ -133,6 +204,7 @@ pub fn node_add_block(name_of_new_block: &str, references: &Vec<&str>, node: &mu
         calc_blue(name_of_new_block, node, k);
     }
 
+    return true;
 }
 
 pub fn update_tips(name_of_new_block: &str, node: &mut Node){

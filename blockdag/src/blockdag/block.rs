@@ -35,6 +35,15 @@ pub struct Block{
     pub tips_snapshot: HashMap<String, Arc<RwLock<Block>>>, // local generated. a snapshot of tips at the time of block added to the local dag. after added.
 }
 
+pub struct BlockRaw{                                        // simulation of raw block data
+    pub name: String,                                       // bits stream, local verified. that is: hash of block head. (in simulation we use a readable string)
+    pub height: u64,                                        // bits stream, local verified.
+    pub size_of_past_set: u64,                              // bits stream, local verified.
+    pub prev: Vec<String>,                                  // bits stream.
+    pub propagation: i32,                                   // only used for propagation simulation.
+}
+
+
 pub struct MaxMin{
     pub max: u64,
     pub min: u64,
