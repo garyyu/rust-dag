@@ -36,7 +36,7 @@ pub fn dag_add_block(name: &str, references: &Vec<&str>, dag: &mut HashMap<Strin
     }));
 
     //add references
-    for reference in references {
+    'outer: for reference in references {
         let value = dag.get(*reference);
         match value {
             None => {
@@ -49,6 +49,10 @@ pub fn dag_add_block(name: &str, references: &Vec<&str>, dag: &mut HashMap<Strin
                 // add previous blocks to this block
                 {
                     let reference_block = reference_block.read().unwrap();
+
+//                    if reference_block.is_blue == false {
+//                        continue 'outer;
+//                    }
 
                     let mut this_block_w = this_block.write().unwrap();
                     this_block_w.prev.insert(reference_block.name.clone(), Arc::clone(block));

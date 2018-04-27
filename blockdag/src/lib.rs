@@ -746,7 +746,7 @@ mod tests {
 
         // important note: the token-ring locker must be drop as soon as possible by node.
         let block_token_ring: Arc<RwLock<HashMap<String, Arc<RwLock<BlockRaw>>>>> = Arc::new(RwLock::new(HashMap::new()));
-        let mining_token_ring = Arc::new(RwLock::new(0 as i32));
+        let mining_token_ring: Arc<RwLock<(i32,i32)>> = Arc::new(RwLock::new((0,0)));
         let blocks_generated = Arc::new(RwLock::new(0 as i32));
 
         let mut handles = vec![];
@@ -805,11 +805,11 @@ mod tests {
                 // block mining and tx thread
                 loop {
                     let mut mining_lock = mining.write().unwrap();
-                    if *mining_lock <= -1 {
+                    if (*mining_lock).0 <= -1 {
 
                         let node_w = node.read().unwrap();
-                        info!("{} tx thread exited. height={},size_of_dag={},mining_lock={}. mined_blocks={}",
-                              node_w.name, node_w.height, node_w.size_of_dag, mining_lock, node_w.mined_blocks);
+                        info!("{} tx thread exited. height={},size_of_dag={},mining_lock={:?}. mined_blocks={}",
+                              node_w.name, node_w.height, node_w.size_of_dag, *mining_lock, node_w.mined_blocks);
                         drop(mining_lock);
 
                         if node_w.name == "node0" {
@@ -820,16 +820,27 @@ mod tests {
 
                         break;
 
-                    }else if *mining_lock == 0 {
+                    }else if (*mining_lock).0 == 0 {
                         drop(mining_lock);
                         thread::sleep(Duration::from_millis(10));
                         continue;
                     }
 
-                    *mining_lock -= 1;
+                    let node_w = node.read().unwrap();
+                    if node_w.height+1 < (*mining_lock).1 as u64 {
+                        //info!("{} mining skip because low height: {}, need: {}", node_w.name, node_w.height, (*mining_lock).1);
+                        drop(mining_lock);
+                        drop(node_w);
+                        thread::sleep(Duration::from_millis(10));
+                        continue;
+                    }
+
+                    (*mining_lock).0 -= 1;
                     drop(mining_lock);
+                    drop(node_w);
 
                     let mut node_w = node.write().unwrap();
+                    info!("{} start mining on height: {}", node_w.name, node_w.height+1);
 
                     let mut blocks_generated_w = blocks_generated.write().unwrap();
                     *blocks_generated_w += 1;
@@ -871,15 +882,28 @@ mod tests {
         thread::sleep(Duration::from_millis(1000));
 
         let mut acc = 0;
+        let mut height = 0;
         loop {
+
             let mut mining = mining_token_ring.write().unwrap();
+            if (*mining).0 > 0 {
+                // miner too slow?
+                drop(mining);
+                //println!("miner too slow?");
+                thread::sleep(Duration::from_millis(10));
+                continue;
+            }
+
+            height += 1;
             if acc + blocks_one_time <= blocks_generating {
-                *mining += blocks_one_time;
+                (*mining).0 += blocks_one_time;
                 acc += blocks_one_time;
             }else{
-                *mining += blocks_generating-acc;
+                (*mining).0 += blocks_generating-acc;
                 acc += blocks_generating-acc;
             }
+            (*mining).1 = height;
+            info!("test_nodes_sync(): start mining {} blocks at height {}. mining_lock={:?}", blocks_one_time, height, *mining);
             drop(mining);
 
             thread::sleep(Duration::from_millis(100));
@@ -894,7 +918,7 @@ mod tests {
                     thread::sleep(Duration::from_millis(1000));
 
                     let mut mining = mining_token_ring.write().unwrap();
-                    *mining = -1;   // ask nodes stop and exit.
+                    (*mining).0 = -1;   // ask nodes stop and exit.
                     drop(mining);
                     break;
                 }
