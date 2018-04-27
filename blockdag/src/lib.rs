@@ -735,8 +735,8 @@ mod tests {
 
         let _ = env_logger::try_init();
 
-        const TOTAL_NODES: i32 = 500;        // how many nodes to simulate. each node is a thread spawn.
-        let blocks_generating:i32 = 3000;      // how many blocks mining for this test.
+        const TOTAL_NODES: i32 = 300;        // how many nodes to simulate. each node is a thread spawn.
+        let blocks_generating:i32 = 100;      // how many blocks mining for this test.
         let blocks_one_time: i32 = 4;        // how many blocks generating in one wait (loop).
         const K: i32 = 3;                    // how many blocks generating in parallel.
 
@@ -852,13 +852,13 @@ mod tests {
 
                     // propagate this new mined block
                     let t1 = PreciseTime::now();
-                    debug!("tx write locking. {} new mined block: {}. height={},size_of_dag={}. mined_blocks={}", node_w.name, block_name, node_w.height, node_w.size_of_dag, node_w.mined_blocks);
+                    info!("tx write locking. {} new mined block: {}. height={},size_of_dag={}. mined_blocks={}", node_w.name, block_name, node_w.height, node_w.size_of_dag, node_w.mined_blocks);
                     let mut propagations = block_propagation.write().unwrap();
                     handle_block_tx(&block_name, &mut propagations, &node_w, TOTAL_NODES-1);
                     let t2 = PreciseTime::now();
                     let td = t1.to(t2);
                     let time_used = td.num_milliseconds() as f64;
-                    debug!("tx time spent:{}ms {} new mined block: {}. height={},size_of_dag={}. mined_blocks={}", time_used, node_w.name, block_name, node_w.height, node_w.size_of_dag, node_w.mined_blocks);
+                    info!("tx time spent:{}ms {} new mined block: {}. height={},size_of_dag={}. mined_blocks={}", time_used, node_w.name, block_name, node_w.height, node_w.size_of_dag, node_w.mined_blocks);
 
                     node_w.mined_blocks += 1;
 
@@ -938,7 +938,7 @@ mod tests {
         let d = start.to(end);
         let total_time_used = d.num_milliseconds() as f64;
 
-        println!("total time used: {} (ms)", total_time_used-1000);
+        println!("total time used: {} (ms)", total_time_used-1000.0);
 
         assert_eq!(2 + 2, 4);
     }
