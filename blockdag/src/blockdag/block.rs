@@ -174,6 +174,37 @@ pub fn get_ltpq(source: &HashMap<String,Arc<RwLock<Block>>>) -> Vec<(String, u64
     return keys_vec;
 }
 
+/// score topological priority queue.
+///
+///     where the score of a block is defined as the number of blue blocks in its past: score(B) := |BLUEk (past(B))|.
+///
+pub fn get_stpq(source: &HashMap<String,Arc<RwLock<Block>>>) -> Vec<(String, u64, u64)>{
+
+    let mut keys_vec: Vec<(String, u64, u64)> = Vec::new();
+
+    for (_key, value) in source {
+        let block = Arc::clone(value);
+        let block = block.read().unwrap();
+
+        keys_vec.push((String::from(block.name.clone()), block.size_of_past_blue, block.size_of_past_set));
+    }
+
+    keys_vec.sort_by(|a, b| {
+        match a.1.cmp(&b.1).reverse() {
+            Ordering::Equal => {
+                match a.2.cmp(&b.2).reverse() {
+                    Ordering::Equal => a.0.cmp(&b.0),
+                    other => other,
+                }
+            },
+            other => other,
+        }
+    });
+
+    return keys_vec;
+}
+
+
 
 // Move from the list all the block successors which is in the list, self not included, to the target list.
 //

@@ -37,7 +37,7 @@ mod tests {
     use std::sync::mpsc;
 
     use blockdag::{Node,BlockRaw};
-    use blockdag::{node_add_block,dag_print,dag_blue_print,tips_anticone,sorted_keys_by_height,remove_past_future,update_tips,calc_blue,handle_block_rx,handle_block_tx};
+    use blockdag::{node_add_block,dag_print,dag_blue_print,tips_anticone,sorted_keys_by_height,remove_past_future,update_tips,calc_blue,handle_block_rx,handle_block_tx,get_stpq};
 
     #[test]
     fn test_fig3() {
@@ -736,8 +736,8 @@ mod tests {
         let _ = env_logger::try_init();
 
         const TOTAL_NODES: i32 = 100;        // how many nodes to simulate. each node is a thread spawn.
-        let blocks_generating:i32 = 100;      // how many blocks mining for this test.
-        let blocks_one_time: i32 = 4;        // how many blocks generating in one wait (loop).
+        let blocks_generating:i32 = 10;      // how many blocks mining for this test.
+        let blocks_one_time: i32 = 3;        // how many blocks generating in one wait (loop).
         const K: i32 = 3;                    // how many blocks generating in parallel.
 
         println!("test_nodes_sync(): start. k={}, blocks={}, nodes={}", K, blocks_generating, TOTAL_NODES);
@@ -847,8 +847,10 @@ mod tests {
                     let block_name = format!("{:04}", blocks_generated_w);
                     drop(blocks_generated_w);
 
-                    let references_str = node_w.tips.iter().map(|(k,_)|{k.clone()}).collect::<Vec<String>>();
-                    node_add_block(&block_name, &references_str.iter().map(|s| s.as_ref()).collect(), &mut node_w, K, true);
+                    let mut score_stpq = get_stpq(&node_w.tips);
+                    score_stpq.truncate((K+1) as usize);
+                    let references_str = score_stpq.iter().map(|&(ref s,_,_)| s.as_ref()).collect();
+                    node_add_block(&block_name, &references_str, &mut node_w, K, true);
 
                     // propagate this new mined block
                     let t1 = PreciseTime::now();

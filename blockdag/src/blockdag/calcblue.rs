@@ -16,9 +16,8 @@
 
 use std::collections::HashMap;
 use std::sync::{Arc,RwLock};
-use std::cmp::Ordering;
 
-use blockdag::{Block,Node,tips_anticone,tips_anticone_blue,anticone_blue,get_ltpq,sorted_keys_by_height,sizeof_pastset};
+use blockdag::{Block,Node,tips_anticone,tips_anticone_blue,anticone_blue,get_ltpq,get_stpq,sorted_keys_by_height,sizeof_pastset};
 
 /// Function providing blue block calculation.
 ///
@@ -182,35 +181,6 @@ fn check_blue(blue_anticone: &HashMap<String, Arc<RwLock<Block>>>, _k: i32) {
     }
 }
 
-/// score topological priority queue.
-///
-///     where the score of a block is defined as the number of blue blocks in its past: score(B) := |BLUEk (past(B))|.
-///
-fn get_stpq(source: &HashMap<String,Arc<RwLock<Block>>>) -> Vec<(String, u64, u64)>{
-
-    let mut keys_vec: Vec<(String, u64, u64)> = Vec::new();
-
-    for (_key, value) in source {
-        let block = Arc::clone(value);
-        let block = block.read().unwrap();
-
-        keys_vec.push((String::from(block.name.clone()), block.size_of_past_blue, block.size_of_past_set));
-    }
-
-    keys_vec.sort_by(|a, b| {
-        match a.1.cmp(&b.1).reverse() {
-            Ordering::Equal => {
-                match a.2.cmp(&b.2).reverse() {
-                    Ordering::Equal => a.0.cmp(&b.0),
-                    other => other,
-                }
-            },
-            other => other,
-        }
-    });
-
-    return keys_vec;
-}
 
 
 // Function update all successors (recursively) of this block, if it's blue, size_of_past_blue minus 1.
