@@ -621,7 +621,7 @@ mod tests {
                 node_add_block("Genesis", &Vec::new(), &mut node_w, K, true);
                 drop(node_w);
 
-                // block rx
+                // block rx thread
                 let block_propagation_rx = Arc::clone(&block_propagation);
                 let node_for_rx = Arc::clone(&node);
                 let (tx, rx) = mpsc::channel();
@@ -635,22 +635,22 @@ mod tests {
                     loop {
                         let received = rx.try_recv();
                         if received.is_ok() {
-                            info!("{} rx thread exited. size_of_stash={}", node_name, node_stash.len());
+                            debug!("{} rx thread exited. size_of_stash={}", node_name, node_stash.len());
                             break;
                         }
 
                         let mut node_w2 = node_for_rx.write().unwrap();
 
                         // processing block propagation
-//                        let t1 = PreciseTime::now();
+                        let t1 = PreciseTime::now();
                         let mut arrivals = block_propagation_rx.write().unwrap();
                         handle_block_rx(&mut arrivals, &mut node_w2, &mut node_stash, K);
                         drop(arrivals);
 
-//                        let t2 = PreciseTime::now();
-//                        let td = t1.to(t2);
-//                        let time_used = td.num_milliseconds() as f64;
-//                        info!("rx time spent:{}ms {}. size_of_stash={}", time_used, &node_w2, node_stash.len());
+                        let t2 = PreciseTime::now();
+                        let td = t1.to(t2);
+                        let time_used = td.num_milliseconds() as f64;
+                        info!("rx time spent:{}ms {}. size_of_stash={}", time_used, &node_w2, node_stash.len());
                         drop(node_w2);
 
                         let random_sleep = rand::thread_rng().gen_range(1, 100);
@@ -659,13 +659,13 @@ mod tests {
 
                 });
 
-                // block mining and tx
+                // block mining and tx thread
                 loop {
                     let mut mining_lock = mining.write().unwrap();
                     if *mining_lock <= -1 {
 
                         let node_w = node.read().unwrap();
-                        debug!("{} tx thread exited. height={},size_of_dag={},mining_lock={}. mined_blocks={}",
+                        info!("{} tx thread exited. height={},size_of_dag={},mining_lock={}. mined_blocks={}",
                               node_w.name, node_w.height, node_w.size_of_dag, mining_lock, node_w.mined_blocks);
                         drop(mining_lock);
 
