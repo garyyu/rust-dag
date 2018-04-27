@@ -735,8 +735,8 @@ mod tests {
 
         let _ = env_logger::try_init();
 
-        const TOTAL_NODES: i32 = 100;        // how many nodes to simulate. each node is a thread spawn.
-        let blocks_generating:i32 = 1000;      // how many blocks mining for this test.
+        const TOTAL_NODES: i32 = 500;        // how many nodes to simulate. each node is a thread spawn.
+        let blocks_generating:i32 = 3000;      // how many blocks mining for this test.
         let blocks_one_time: i32 = 4;        // how many blocks generating in one wait (loop).
         const K: i32 = 3;                    // how many blocks generating in parallel.
 
