@@ -103,7 +103,11 @@ pub fn handle_block_tx(new_mined_block_name:&str, propagations: &mut HashMap<Str
     drop(propagations);
 }
 
-pub fn handle_block_rx(arrivals: &mut HashMap<String, Arc<RwLock<BlockRaw>>>, node: &mut Node, node_stash: &mut HashMap<String, Arc<RwLock<BlockRaw>>>, k: i32){
+pub fn handle_block_rx(block_propagation_rx: &Arc<RwLock<HashMap<String, Arc<RwLock<BlockRaw>>>>>, node: &mut Node, node_stash: &mut HashMap<String, Arc<RwLock<BlockRaw>>>, k: i32) -> i32{
+
+    let mut arrivals = block_propagation_rx.write().unwrap();
+
+    let mut block_received_total: i32 = 0;
 
     let mut to_be_removed: Vec<String> = Vec::new();
     let stash = node_stash;
@@ -119,6 +123,7 @@ pub fn handle_block_rx(arrivals: &mut HashMap<String, Arc<RwLock<BlockRaw>>>, no
             let is_real_new = stash.get(name_of_new_block).is_none();
             stash.entry(name_of_new_block.clone()).or_insert(Arc::clone(value));
             if is_real_new {
+                block_received_total += 1;
                 let arrival = &mut value.write().unwrap();
 
                 arrival.propagation -= 1;
@@ -134,7 +139,7 @@ pub fn handle_block_rx(arrivals: &mut HashMap<String, Arc<RwLock<BlockRaw>>>, no
     }
 
     // important note: the 'arrivals' must be drop lock as soon as possible by node.
-    //drop(*arrivals);  //todo: cannot move out of borrowed content
+    drop(arrivals);
 
     // after drop lock, start local processing with stash
 
@@ -168,6 +173,8 @@ pub fn handle_block_rx(arrivals: &mut HashMap<String, Arc<RwLock<BlockRaw>>>, no
         // in cast one released stash block could release another stash block, loop check.
         block_added.truncate(0);
     }
+
+    return block_received_total;
 }
 
 pub fn node_add_block(name_of_new_block: &str, references: &Vec<&str>, node: &mut Node, k: i32, do_update_tips: bool) -> bool {

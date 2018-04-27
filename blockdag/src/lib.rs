@@ -643,14 +643,14 @@ mod tests {
 
                         // processing block propagation
                         let t1 = PreciseTime::now();
-                        let mut arrivals = block_propagation_rx.write().unwrap();
-                        handle_block_rx(&mut arrivals, &mut node_w2, &mut node_stash, K);
-                        drop(arrivals);
+                        let received = handle_block_rx(&block_propagation_rx, &mut node_w2, &mut node_stash, K);
 
                         let t2 = PreciseTime::now();
                         let td = t1.to(t2);
                         let time_used = td.num_milliseconds() as f64;
-                        info!("rx time spent:{}ms {}. size_of_stash={}", time_used, &node_w2, node_stash.len());
+                        if received>0 {
+                            info!("rx time spent:{}ms {}. size_of_stash={}", time_used, &node_w2, node_stash.len());
+                        }
                         drop(node_w2);
 
                         let random_sleep = rand::thread_rng().gen_range(1, 100);
@@ -696,20 +696,15 @@ mod tests {
                     let references_str = node_w.tips.iter().map(|(k,_)|{k.clone()}).collect::<Vec<String>>();
                     node_add_block(&block_name, &references_str.iter().map(|s| s.as_ref()).collect(), &mut node_w, K, true);
 
-                    info!("{}", &node_w);
-
                     // propagate this new mined block
                     let t1 = PreciseTime::now();
-                    info!("node {} write locking for broadcast new block {}", node_w.name, block_name);
+                    info!("tx write locking. {} new mined block: {}. height={},size_of_dag={}. mined_blocks={}", node_w.name, block_name, node_w.height, node_w.size_of_dag, node_w.mined_blocks);
                     let mut propagations = block_propagation.write().unwrap();
                     handle_block_tx(&block_name, &mut propagations, &node_w, TOTAL_NODES-1);
                     let t2 = PreciseTime::now();
                     let td = t1.to(t2);
                     let time_used = td.num_milliseconds() as f64;
-                    info!("node {} done for broadcasting new block {}. time spent: {}ms", node_w.name, block_name, time_used);
-
-                    info!("node=\"{}\",height={},size_of_dag={}. mined_blocks={}",
-                          node_w.name, node_w.height, node_w.size_of_dag, node_w.mined_blocks);
+                    info!("tx time spent:{}ms {} new mined block: {}. height={},size_of_dag={}. mined_blocks={}", time_used, node_w.name, block_name, node_w.height, node_w.size_of_dag, node_w.mined_blocks);
 
                     node_w.mined_blocks += 1;
 
