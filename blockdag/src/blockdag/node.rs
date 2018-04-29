@@ -86,68 +86,32 @@ impl fmt::Display for Node {
     }
 }
 
-pub fn handle_block_tx(new_mined_block_name:&str, propagations: &mut HashMap<String, Arc<RwLock<BlockRaw>>>, node: &Node, total_nodes: i32) {
+//pub fn handle_block_tx(new_mined_block_name:&str, propagations: &mut HashMap<String, Arc<RwLock<BlockRaw>>>, node: &Node, total_nodes: i32) {
+//
+//    let new_mined_block = &node.dag.get(new_mined_block_name).unwrap().read().unwrap();
+//    let prev_names = new_mined_block.prev.iter().map(|(k,_)|{k.clone()}).collect::<Vec<String>>();
+//
+//    let new_block_raw = BlockRaw{
+//        name:new_mined_block_name.clone().to_string(),
+//        height: new_mined_block.height,
+//        size_of_past_set: new_mined_block.size_of_past_set,
+//        prev: prev_names,
+//        propagation: total_nodes,
+//    };
+//
+//    propagations.insert(new_mined_block_name.clone().to_string(), Arc::new(RwLock::new(new_block_raw)));
+//    drop(propagations);
+//}
 
-    let new_mined_block = &node.dag.get(new_mined_block_name).unwrap().read().unwrap();
-    let prev_names = new_mined_block.prev.iter().map(|(k,_)|{k.clone()}).collect::<Vec<String>>();
+pub fn handle_block_rx(block_rx: BlockRaw, node: &mut Node, stash: &mut HashMap<String, BlockRaw>, k: i32){
 
-    let new_block_raw = BlockRaw{
-        name:new_mined_block_name.clone().to_string(),
-        height: new_mined_block.height,
-        size_of_past_set: new_mined_block.size_of_past_set,
-        prev: prev_names,
-        propagation: total_nodes,
-    };
+    stash.entry(block_rx.name.clone()).or_insert(block_rx);
 
-    propagations.insert(new_mined_block_name.clone().to_string(), Arc::new(RwLock::new(new_block_raw)));
-    drop(propagations);
-}
-
-pub fn handle_block_rx(block_propagation_rx: &Arc<RwLock<HashMap<String, Arc<RwLock<BlockRaw>>>>>, node: &mut Node, node_stash: &mut HashMap<String, Arc<RwLock<BlockRaw>>>, k: i32) -> i32{
-
-    let mut arrivals = block_propagation_rx.write().unwrap();
-
-    let mut block_received_total: i32 = 0;
-
-    let mut to_be_removed: Vec<String> = Vec::new();
-    let stash = node_stash;
-
-    {
-        let dag = &node.dag;
-
-        for (name_of_new_block, value) in &*arrivals {
-            if dag.get(name_of_new_block).is_some(){
-                continue; // block already received.
-            }
-
-            let is_real_new = stash.get(name_of_new_block).is_none();
-            stash.entry(name_of_new_block.clone()).or_insert(Arc::clone(value));
-            if is_real_new {
-                block_received_total += 1;
-                let arrival = &mut value.write().unwrap();
-
-                arrival.propagation -= 1;
-                if arrival.propagation <= 0 {
-                    to_be_removed.push(name_of_new_block.clone());
-                }
-            }
-        }
-    }
-
-    for name in &to_be_removed {
-        arrivals.remove(name);
-    }
-
-    // important note: the 'arrivals' must be drop lock as soon as possible by node.
-    drop(arrivals);
-
-    // after drop lock, start local processing with stash
+    // local processing with stash
 
     let mut block_added: Vec<String> = Vec::new();
     loop {
-        'outer: for (name_of_stash_block, value) in &*stash {
-            let stash_block = Arc::clone(value);
-            let stash_block = stash_block.read().unwrap();
+        'outer: for (name_of_stash_block, stash_block) in &*stash {
 
             // before adding to dag, make sure all its predecessors are already in dag, otherwise skip it for this time.
             for prev in &stash_block.prev {
@@ -173,8 +137,6 @@ pub fn handle_block_rx(block_propagation_rx: &Arc<RwLock<HashMap<String, Arc<RwL
         // in cast one released stash block could release another stash block, loop check.
         block_added.truncate(0);
     }
-
-    return block_received_total;
 }
 
 pub fn node_add_block(name_of_new_block: &str, references: &Vec<&str>, node: &mut Node, k: i32, do_update_tips: bool) -> bool {

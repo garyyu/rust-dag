@@ -27,7 +27,7 @@ mod hourglass;
 mod calcblue;
 
 pub use self::block::{Block,BlockRaw,MaxMin,append_maps,remove_past_future,sorted_keys_by_height,get_ltpq,get_stpq};
-pub use self::node::{Node,node_add_block,update_tips,handle_block_rx,handle_block_tx};
+pub use self::node::{Node,node_add_block,update_tips,handle_block_rx};
 pub use self::dagsim::{dag_add_block,dag_print,dag_blue_print};
 pub use self::cardinality::{sizeof_pastset,step_one_past};
 pub use self::anticone::{tips_anticone,tips_anticone_blue,anticone_blue};

@@ -30,6 +30,8 @@ mod tests {
 
     use std::collections::HashMap;
     use std::sync::{Arc,RwLock};
+    use std::sync::atomic::{AtomicBool,AtomicIsize};
+    use std::sync::atomic::Ordering;
     use self::rand::Rng;
     use self::time::{PreciseTime};
     use std::thread;
@@ -37,7 +39,7 @@ mod tests {
     use std::sync::mpsc;
 
     use blockdag::{Node,BlockRaw};
-    use blockdag::{node_add_block,dag_print,dag_blue_print,tips_anticone,sorted_keys_by_height,remove_past_future,update_tips,calc_blue,handle_block_rx,handle_block_tx,get_stpq};
+    use blockdag::{node_add_block,dag_print,dag_blue_print,tips_anticone,sorted_keys_by_height,remove_past_future,update_tips,calc_blue,handle_block_rx,get_stpq};
 
     #[test]
     fn test_fig3() {
@@ -735,8 +737,8 @@ mod tests {
 
         let _ = env_logger::try_init();
 
-        const TOTAL_NODES: i32 = 300;        // how many nodes to simulate. each node is a thread spawn.
-        let blocks_generating:i32 = 100;      // how many blocks mining for this test.
+        const TOTAL_NODES: i32 = 100;         // how many nodes to simulate. each node is a thread spawn.
+        let blocks_generating:i32 = 1000;      // how many blocks mining for this test.
         let blocks_one_time: i32 = 4;        // how many blocks generating in one wait (loop).
         const K: i32 = 3;                    // how many blocks generating in parallel.
 
@@ -747,13 +749,30 @@ mod tests {
         let mining_token_ring: Arc<RwLock<(i32,i32)>> = Arc::new(RwLock::new((0,0)));
         let blocks_generated = Arc::new(RwLock::new(0 as i32));
 
+        // block dispatcher
+        let mut thread_mpsc = vec![];
+
+        let latest_block_hash  = Arc::new(AtomicIsize::new(-1));
+
         let mut handles = vec![];
+
+        let (dispatcher_tx, dispatcher_rx) = mpsc::channel();
+
+        // nodes threads
+        let new_mining_start  = Arc::new(AtomicBool::new(false));
 
         for number in 0..TOTAL_NODES {
 
+            let new_mining_start_clone = Arc::clone(&new_mining_start);
+
             let mining = Arc::clone(&mining_token_ring);
-            let block_propagation = Arc::clone(&block_token_ring);
             let blocks_generated = Arc::clone(&blocks_generated);
+
+            let (thread_sender, thread_receiver) = mpsc::channel();
+            thread_mpsc.push(thread_sender);
+
+            let dispatcher_tx_clone = dispatcher_tx.clone();
+            let latest_block_hash_clone = latest_block_hash.clone();
 
             let handle = thread::spawn(move || {
 
@@ -763,51 +782,50 @@ mod tests {
                 drop(node_w);
 
                 // block rx thread
-                let block_propagation_rx = Arc::clone(&block_propagation);
                 let node_for_rx = Arc::clone(&node);
-                let (tx, rx) = mpsc::channel();
-                let rx_handle = thread::spawn(move || {
+                let _rx_handle = thread::spawn(move || {
 
-                    let mut node_stash: HashMap<String, Arc<RwLock<BlockRaw>>> = HashMap::new();
+                    let mut node_stash: HashMap<String, BlockRaw> = HashMap::new();
                     let node_w2 = node_for_rx.read().unwrap();
-                    let node_name = node_w2.name.clone();
+                    let _node_name = node_w2.name.clone();
                     drop(node_w2);
 
                     loop {
-                        let received = rx.try_recv();
-                        if received.is_ok() {
-                            debug!("{} rx thread exited. size_of_stash={}", node_name, node_stash.len());
-                            break;
-                        }
+                        let the_receive = thread_receiver.recv();
+                        if the_receive.is_err() {break;}
+                        let new_block = the_receive.unwrap();
 
                         let mut node_w2 = node_for_rx.write().unwrap();
 
                         // processing block propagation
-                        let t1 = PreciseTime::now();
-                        let received = handle_block_rx(&block_propagation_rx, &mut node_w2, &mut node_stash, K);
-
-                        let t2 = PreciseTime::now();
-                        let td = t1.to(t2);
-                        let time_used = td.num_milliseconds() as f64;
-                        if received>0 {
-                            debug!("rx time spent:{}ms {}. size_of_stash={}", time_used, &node_w2, node_stash.len());
-                        }
+                        handle_block_rx(new_block, &mut node_w2, &mut node_stash, K);
+                        debug!("{}. size_of_stash={}", &node_w2, node_stash.len());
                         drop(node_w2);
 
-                        let random_sleep = rand::thread_rng().gen_range(1, 100);
-                        thread::sleep(Duration::from_millis(random_sleep));
+//                        let random_sleep = rand::thread_rng().gen_range(1, 50);
+//                        thread::sleep(Duration::from_millis(random_sleep));
+//                        thread::sleep(Duration::from_millis(random_sleep));
                     }
+
+                    //info!("{} rx thread exited", _node_name);
 
                 });
 
                 // block mining and tx thread
                 loop {
+                    if new_mining_start_clone.load(Ordering::Relaxed) == false {
+                        thread::sleep(Duration::from_millis(10));
+                        continue;
+                    }
+
                     let mut mining_lock = mining.write().unwrap();
                     if (*mining_lock).0 <= -1 {
 
+                        // log and exit thread.
+
                         let node_w = node.read().unwrap();
-                        info!("{} tx thread exited. height={},size_of_dag={},mining_lock={:?}. mined_blocks={}",
-                              node_w.name, node_w.height, node_w.size_of_dag, *mining_lock, node_w.mined_blocks);
+                        //info!("{} tx thread exited. height={},size_of_dag={},mining_lock={:?}. mined_blocks={}",
+                        //      node_w.name, node_w.height, node_w.size_of_dag, *mining_lock, node_w.mined_blocks);
                         drop(mining_lock);
 
                         if node_w.name == "node0" {
@@ -820,7 +838,6 @@ mod tests {
 
                     }else if (*mining_lock).0 == 0 {
                         drop(mining_lock);
-                        thread::sleep(Duration::from_millis(10));
                         continue;
                     }
 
@@ -829,11 +846,14 @@ mod tests {
                         //info!("{} mining skip because low height: {}, need: {}", node_w.name, node_w.height, (*mining_lock).1);
                         drop(mining_lock);
                         drop(node_w);
-                        thread::sleep(Duration::from_millis(10));
                         continue;
                     }
 
                     (*mining_lock).0 -= 1;
+                    if (*mining_lock).0 == 0 {
+                        new_mining_start_clone.store(false, Ordering::Relaxed);
+                    }
+
                     drop(mining_lock);
                     drop(node_w);
 
@@ -851,14 +871,22 @@ mod tests {
                     node_add_block(&block_name, &references_str, &mut node_w, K, true);
 
                     // propagate this new mined block
-                    let t1 = PreciseTime::now();
-                    info!("tx write locking. {} new mined block: {}. height={},size_of_dag={}. mined_blocks={}", node_w.name, block_name, node_w.height, node_w.size_of_dag, node_w.mined_blocks);
-                    let mut propagations = block_propagation.write().unwrap();
-                    handle_block_tx(&block_name, &mut propagations, &node_w, TOTAL_NODES-1);
-                    let t2 = PreciseTime::now();
-                    let td = t1.to(t2);
-                    let time_used = td.num_milliseconds() as f64;
-                    info!("tx time spent:{}ms {} new mined block: {}. height={},size_of_dag={}. mined_blocks={}", time_used, node_w.name, block_name, node_w.height, node_w.size_of_dag, node_w.mined_blocks);
+                    {
+                        let new_mined_block = &node_w.dag.get(&block_name).unwrap().read().unwrap();
+                        let prev_names = new_mined_block.prev.iter().map(|(k,_)|{k.clone()}).collect::<Vec<String>>();
+
+                        let new_block_raw = BlockRaw{
+                            name:block_name.clone().to_string(),
+                            height: new_mined_block.height,
+                            size_of_past_set: new_mined_block.size_of_past_set,
+                            prev: prev_names,
+                        };
+
+                        dispatcher_tx_clone.send(new_block_raw).unwrap();
+                    }
+
+                    latest_block_hash_clone.store(block_name.parse::<isize>().unwrap(), Ordering::Relaxed);
+                    info!("{} new mined block: {}. height={},size_of_dag={}. mined_blocks={}", node_w.name, block_name, node_w.height, node_w.size_of_dag, node_w.mined_blocks);
 
                     node_w.mined_blocks += 1;
 
@@ -869,20 +897,78 @@ mod tests {
 //                    }
                 }
 
-                let val = String::from("exit");
-                tx.send(val).unwrap();
+                //info!("node {} tx thread exited", number);
 
-                rx_handle.join().unwrap();
             });
 
             handles.push(handle);
         }
 
+
         // wait a while for nodes thread start-up.
-        thread::sleep(Duration::from_millis(1000));
+        thread::sleep(Duration::from_millis(100));
 
         let start = PreciseTime::now();
 
+        // block dispatcher thread
+        let _dispatcher_handle = thread::spawn(move || {
+
+            let mut to_be_dispatched: HashMap<String, BlockRaw> = HashMap::new();
+            let mut dispatched: HashMap<String, HashMap<i32,bool>> = HashMap::new();
+
+            let mut latest_block_hash_copy: isize;
+            'dis_outer: loop {
+                let the_receive = dispatcher_rx.recv();
+                if the_receive.is_err() {break;}
+                let new_block = the_receive.unwrap() as BlockRaw;
+
+                info!("dispatcher recv block: {}. remaining queue size={}", new_block.name, to_be_dispatched.len());
+
+                let mut is_dispatched: HashMap<i32, bool> = HashMap::new();
+                for i in 0..TOTAL_NODES{ is_dispatched.insert(i,false);}
+
+                dispatched.insert(new_block.name.clone(), is_dispatched);
+                to_be_dispatched.insert(new_block.name.clone(), new_block);
+
+                latest_block_hash_copy = latest_block_hash.load(Ordering::Relaxed);
+
+                // dispatching
+                let mut finished_block_list: Vec<String> = Vec::new();
+                let mut new_block_arriving = false;
+                for (name,block) in &to_be_dispatched {
+
+                    let mut is_dispatched_clone;
+                    {
+                        let is_dispatched = dispatched.get(name).unwrap();
+                        is_dispatched_clone = is_dispatched.clone();
+                        for (i, _) in is_dispatched {
+                            let number: usize = *i as usize;
+                            thread_mpsc[number].send(block.clone()).unwrap();    // this is supposed to be a blocking slow call, to simulate block sending via network.
+                            is_dispatched_clone.remove(&i);
+                            if latest_block_hash.load(Ordering::Relaxed) != latest_block_hash_copy {
+                                new_block_arriving = true;
+                                break;
+                            }
+                        }
+                    }
+
+                    if is_dispatched_clone.len() == 0 { finished_block_list.push(name.clone()); }
+
+                    dispatched.insert(name.clone(), is_dispatched_clone);
+
+                    if new_block_arriving == true { break; }
+                }
+
+                for finished_block in &finished_block_list {
+                    to_be_dispatched.remove(finished_block);
+                }
+            }
+
+            info!("dispatcher thread exited.");
+
+        });
+
+        // main controller loop
         let mut acc = 0;
         let mut height = 0;
         loop {
@@ -908,7 +994,9 @@ mod tests {
             debug!("test_nodes_sync(): start mining {} blocks at height {}. mining_lock={:?}", blocks_one_time, height, *mining);
             drop(mining);
 
-            thread::sleep(Duration::from_millis(150));
+            new_mining_start.store(true, Ordering::Relaxed);
+
+            thread::sleep(Duration::from_millis(10));
 
             {
                 let blocks_generated_r = blocks_generated.read().unwrap();
@@ -922,6 +1010,9 @@ mod tests {
                     let mut mining = mining_token_ring.write().unwrap();
                     (*mining).0 = -1;   // ask nodes stop and exit.
                     drop(mining);
+
+                    new_mining_start.store(true, Ordering::Relaxed);
+
                     break;
                 }
             }
