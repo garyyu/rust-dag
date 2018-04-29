@@ -120,11 +120,9 @@ k=3, blues={Genesis,B,C,D,F,I,J,K,M,O,P,R,} total=12/20
 test tests::test_your_example ... ok
 ```
 
-The following pictures are the other two examples figures: Fig.3 and Fig.X1.
+The following picture is another examples: Fig.3.
 
 ![Fig.3](https://github.com/garyyu/rust-dag/blob/master/pics/Fig.3.png)
-
-![Fig.X1](https://github.com/garyyu/rust-dag/blob/master/pics/Fig.X1.png)
 
 Please join us the BlockDAG discussion on [https://godag.github.io](https://godag.github.io).
 
