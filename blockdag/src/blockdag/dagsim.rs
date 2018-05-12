@@ -110,11 +110,36 @@ pub fn dag_blue_print(dag: &HashMap<String, Arc<RwLock<Block>>>) -> String{
         if block.is_some() {
             let block = block.unwrap().read().unwrap();
             if block.is_blue {
-                formatted_info.push_str(&format!("{},", name));
+                if total_blues<=1000 {
+                    formatted_info.push_str(&format!("{},", name));
+                }
                 total_blues += 1;
             }
         }
     }
+    if total_blues>=1000 {
+        formatted_info.push_str("...");
+    }
     formatted_info.push_str(&format!("}} total={}/{}",total_blues,dag.len()));
+    return formatted_info;
+}
+
+pub fn dag_red_print(dag: &HashMap<String, Arc<RwLock<Block>>>) -> String{
+
+    let mut total_reds = 0;
+    let sorted_keys = sorted_keys_by_height(dag, false);
+
+    let mut formatted_info = String::from("reds ={");
+    for &(ref name,_) in &sorted_keys {
+        let block = dag.get(name);
+        if block.is_some() {
+            let block = block.unwrap().read().unwrap();
+            if !block.is_blue {
+                formatted_info.push_str(&format!("{},", name));
+                total_reds += 1;
+            }
+        }
+    }
+    formatted_info.push_str(&format!("}} total={}/{}",total_reds,dag.len()));
     return formatted_info;
 }

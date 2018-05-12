@@ -39,7 +39,7 @@ mod tests {
     use std::sync::mpsc;
 
     use blockdag::{Node,BlockRaw};
-    use blockdag::{node_add_block,dag_print,dag_blue_print,tips_anticone,sorted_keys_by_height,remove_past_future,update_tips,calc_blue,handle_block_rx,get_stpq};
+    use blockdag::{node_add_block,dag_print,dag_blue_print,dag_red_print,tips_anticone,sorted_keys_by_height,remove_past_future,update_tips,calc_blue,handle_block_rx,get_stpq};
 
     #[test]
     fn test_fig3() {
@@ -77,6 +77,9 @@ mod tests {
         println!("k={}, {}", k, &blue_selection);
 
         assert_eq!(&blue_selection, "blues={Genesis,B,C,D,F,H,J,K,M,N,} total=10/13");
+
+        let red_blocks = dag_red_print(&node_w.dag);
+        println!("k={}, {}", k, &red_blocks);
     }
 
     #[test]
@@ -128,6 +131,9 @@ mod tests {
         println!("k={}, {}", k, &blue_selection);
 
         assert_eq!(&blue_selection, "blues={Genesis,B,C,D,F,I,J,K,M,O,P,R,} total=12/20");
+
+        let red_blocks = dag_red_print(&node_w.dag);
+        println!("k={}, {}", k, &red_blocks);
     }
 
     #[test]
@@ -170,12 +176,14 @@ mod tests {
     #[test]
     fn test_add_block() {
 
-        let blocks_generating:i32 = 1000;
+        let blocks_generating:i32 = 1000_000;
 
         let max_classmate_blocks = 3;
         let max_prev_blocks = 5;
 
         let k: i32 = max_classmate_blocks;
+
+        println!("One million blocks could take 1 or 2 minutes (depend on computer), please be patient...  Block to be generated: {}", max_classmate_blocks);
 
         let start = PreciseTime::now();
 
@@ -184,11 +192,6 @@ mod tests {
         let mut node_w = node.write().unwrap();
 
         node_add_block("Genesis", &Vec::new(), &mut node_w, k, true);
-
-        node_add_block("B", &vec!["Genesis"], &mut node_w, k, true);
-        node_add_block("C", &vec!["Genesis"], &mut node_w, k, true);
-        node_add_block("D", &vec!["Genesis"], &mut node_w, k, true);
-        node_add_block("E", &vec!["Genesis"], &mut node_w, k, true);
 
         let mut blocks_generated = 0;
 
@@ -249,7 +252,7 @@ mod tests {
                     references_str.push(reference);
                 }
 
-                let block_name = format!("{:04}", blocks_generated);
+                let block_name = format!("{:06}", blocks_generated);
                 node_add_block(&block_name, &references_str,&mut node_w, k, false);
 
                 //println!("{}", &node_w);
@@ -260,7 +263,7 @@ mod tests {
             // update tips once when a batch of blocks generated.
             let mut classmate_name = blocks_generated;
             for _classmate in 1..classmate_blocks+1 {
-                let block_name = format!("{:04}", classmate_name);
+                let block_name = format!("{:06}", classmate_name);
                 update_tips(&block_name, &mut node_w);
                 calc_blue(&block_name, &mut node_w, k);
                 classmate_name -= 1;
@@ -371,6 +374,9 @@ mod tests {
         }else{
             assert_eq!(2 + 2, 4);
         }
+
+        let red_blocks = dag_red_print(&node_w.dag);
+        println!("k={}, {}", k, &red_blocks);
     }
 
 
@@ -449,6 +455,9 @@ mod tests {
         println!("k={}, {}", k, &blue_selection);
 
         assert_eq!(2 + 2, 4);
+
+        let red_blocks = dag_red_print(&node_w.dag);
+        println!("k={}, {}", k, &red_blocks);
     }
 
 
@@ -587,6 +596,9 @@ mod tests {
         }else {
             assert_eq!(2 + 2, 4);
         }
+
+        let red_blocks = dag_red_print(&node_w.dag);
+        println!("k={}, {}", k, &red_blocks);
     }
 
     #[test]
